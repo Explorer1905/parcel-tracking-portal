@@ -18,13 +18,10 @@ public class DashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        String selectedId = req.getParameter("parcel");
-        Parcel selected = service.find(selectedId);
         req.setAttribute("query", value(req.getParameter("q")));
+        req.setAttribute("status", value(req.getParameter("status")));
         req.setAttribute("parcels", service.search(req.getParameter("q")));
         req.setAttribute("summary", service.summary());
-        req.setAttribute("selected", selected);
-        req.setAttribute("events", selected == null ? java.util.List.of() : service.events(selected.id()));
         req.getRequestDispatcher("/WEB-INF/views/dashboard.jsp").forward(req, resp);
     }
 
@@ -33,10 +30,10 @@ public class DashboardServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         try {
-            service.addEvent(req.getParameter("parcelId"), req.getParameter("status"),
-                    req.getParameter("location"), req.getParameter("remarks"));
-            String id = req.getParameter("parcelId").trim();
-            resp.sendRedirect("dashboard?parcel=" + URLEncoder.encode(id, StandardCharsets.UTF_8));
+            service.addEvent(req.getParameter("parcelId"), req.getParameter("eventStatus"),
+                    req.getParameter("eventLocation"), req.getParameter("eventTime"),
+                    req.getParameter("remarks"));
+            resp.sendRedirect("parcel?id=" + URLEncoder.encode(req.getParameter("parcelId").trim(), StandardCharsets.UTF_8));
         } catch (IllegalArgumentException e) {
             req.setAttribute("error", e.getMessage());
             doGet(req, resp);

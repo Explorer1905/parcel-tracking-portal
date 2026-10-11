@@ -141,7 +141,7 @@ public class ParcelDao {
                 while (rs.next()) {
                     events.add(new ParcelEvent(rs.getLong("event_id"), rs.getString("parcel_id"),
                             rs.getString("status"), rs.getString("location"),
-                            rs.getString("event_time"), rs.getString("remarks")));
+                            rs.getString("event_time"), rs.getString("remarks"), false));
                 }
             }
         } catch (SQLException e) {
@@ -150,13 +150,15 @@ public class ParcelDao {
         return events;
     }
 
-    public void addEvent(String parcelId, String status, String location, String remarks) {
-        String sql = "INSERT INTO events (parcel_id, status, location, remarks) VALUES (?,?,?,?)";
+    public void addEvent(String parcelId, String status, String location,
+                         java.sql.Timestamp eventTime, String remarks) {
+        String sql = "INSERT INTO events (parcel_id, status, location, event_time, remarks) VALUES (?,?,?,?,?)";
         try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, parcelId);
             ps.setString(2, status);
             ps.setString(3, location);
-            ps.setString(4, remarks);
+            ps.setTimestamp(4, eventTime);
+            ps.setString(5, remarks);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException(e);
@@ -165,21 +167,41 @@ public class ParcelDao {
 
     public DashboardSummary summary() {
         String sql = "SELECT COUNT(*) AS total, "
-                + "SUM(CASE WHEN latest.status = 'Registered' THEN 1 ELSE 0 END) AS registered, "
                 + "SUM(CASE WHEN latest.status = 'In Transit' THEN 1 ELSE 0 END) AS in_transit, "
                 + "SUM(CASE WHEN latest.status = 'Delivered' THEN 1 ELSE 0 END) AS delivered, "
-                + "SUM(CASE WHEN latest.status IN ('Delayed', 'Exception') THEN 1 ELSE 0 END) AS exceptions "
-                + "FROM parcels p JOIN (SELECT parcel_id, status FROM events e1 WHERE event_id = "
+                + "SUM(CASE WHEN latest.status = 'Failed' OR (latest.status <> 'Delivered' "
+                + "AND DATEDIFF('HOUR', latest.event_time, CURRENT_TIMESTAMP()) > 48) "
+                + "THEN 1 ELSE 0 END) AS delayed "
+                + "FROM parcels p JOIN (SELECT parcel_id, status, event_time FROM events e1 WHERE event_id = "
                 + "(SELECT MAX(e2.event_id) FROM events e2 WHERE e2.parcel_id = e1.parcel_id)) latest "
                 + "ON latest.parcel_id = p.parcel_id";
         try (Connection c = conn(); Statement s = c.createStatement();
              ResultSet rs = s.executeQuery(sql)) {
             rs.next();
-            return new DashboardSummary(rs.getInt("total"), rs.getInt("registered"),
-                    rs.getInt("in_transit"), rs.getInt("delivered"),
-                    rs.getInt("exceptions"));
+            return new DashboardSummary(rs.getInt("total"), rs.getInt("in_transit"),
+                    rs.getInt("delivered"), rs.getInt("delayed"));
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public List<Parcel> alerts() {
+            List<Parcel> result = new ArrayList<>();
+            for (Parcel parcel : find("")) {
+                String sql = "SELECT status, DATEDIFF('HOUR', event_time, CURRENT_TIMESTAMP()) AS age "
+                        + "FROM events WHERE parcel_id = ? ORDER BY event_time DESC, event_id DESC LIMIT 1";
+                try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
+                    ps.setString(1, parcel.id());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next() && ("Failed".equals(rs.getString("status"))
+                                || (!"Delivered".equals(rs.getString("status")) && rs.getLong("age") > 48))) {
+                            result.add(parcel);
+                        }
+                    }
+                } catch (SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+            return result;
     }
 }
