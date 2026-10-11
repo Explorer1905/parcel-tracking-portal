@@ -507,6 +507,62 @@ TASKS[4] = dict(
     ],
 )
 
+TASKS[5] = dict(
+    title="Application Deployment and Testing",
+    branch="develop",
+    filename="task-05-deployment-testing",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "To build the Parcel Tracking Portal, deploy the generated WAR file to Apache Tomcat, verify the application in a browser and confirm the health-check endpoint responds successfully."),
+        ("h", "2. Environment"),
+        ("table", ["Item", "Value"], [
+            ["Operating system", "Windows"],
+            ["Java", "JDK 22"],
+            ["Build tool", "Apache Maven"],
+            ["Application server", "Apache Tomcat 10.1.60"],
+            ["Tomcat port", "8081"],
+            ["Application URL", "http://localhost:8081/parcel-tracking-portal/"],
+        ]),
+        ("h", "3. Build and Deployment"),
+        ("numbered", [
+            "Updated the local develop branch after merging the parcel-entry feature.",
+            "Ran mvn clean package successfully.",
+            "Verified that target/parcel-tracking-portal.war was generated.",
+            "Copied the WAR file into Tomcat's webapps directory.",
+            "Configured Tomcat to use port 8081 because Jenkins was already using port 8080.",
+            "Set JAVA_HOME to the installed JDK 22 directory and started Tomcat.",
+        ]),
+        ("h", "4. Functional Verification"),
+        ("table", ["Test", "Result"], [
+            ["Tomcat listener on port 8081", "Pass"],
+            ["Portal home page", "HTTP 200"],
+            ["Health endpoint /health", "HTTP 200; response OK"],
+            ["Parcel management link", "Available from the home page"],
+        ]),
+        ("h", "5. Commands Used"),
+        ("code", "git checkout develop\ngit pull origin develop\nmvn clean package\nCopy-Item target\\parcel-tracking-portal.war <tomcat>\\webapps\\ -Force\n$env:JAVA_HOME = 'C:\\Program Files\\Java\\jdk-22'\n.\\startup.bat\nhttp://localhost:8081/parcel-tracking-portal/\nhttp://localhost:8081/parcel-tracking-portal/health"),
+        ("h", "6. Issues Faced and Fixes"),
+        ("bullets", [
+            "Tomcat initially could not start because JAVA_HOME was not defined; fixed by setting JAVA_HOME to C:\\Program Files\\Java\\jdk-22.",
+            "Port 8080 was already occupied by Jenkins, so the Tomcat HTTP connector was changed to port 8081.",
+            "Requests sent to port 8080 returned Jenkins responses and 404 errors; testing the configured Tomcat port 8081 returned the application successfully.",
+        ]),
+        ("h", "7. Screenshots"),
+        ("screenshots",),
+        ("h", "8. Deliverables Checklist"),
+        ("check", [
+            "Maven build completed successfully",
+            "WAR file generated",
+            "WAR deployed to Apache Tomcat",
+            "Portal home page verified",
+            "Health endpoint verified with response OK",
+            "Deployment screenshots added to the repository",
+        ]),
+        ("h", "9. Conclusion"),
+        ("p", "The Parcel Tracking Portal was built successfully, deployed to Apache Tomcat 10.1.60 and tested on port 8081. The home page returned HTTP 200 and the health endpoint returned OK, confirming that the application was running correctly."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
