@@ -26,53 +26,31 @@
   <h1>Parcel Tracking Dashboard</h1>
   <p><a href="index.jsp">Home</a> | <a href="parcels">Add parcel</a></p>
   <div class="cards">
-    <div class="card">Total<span class="number"><%= summary.total() %></span></div>
-    <div class="card">Registered<span class="number"><%= summary.registered() %></span></div>
-    <div class="card">In transit<span class="number"><%= summary.inTransit() %></span></div>
-    <div class="card">Delivered<span class="number"><%= summary.delivered() %></span></div>
-    <div class="card">Exceptions<span class="number"><%= summary.exceptions() %></span></div>
+    <div class="card">Total<span id="sumTotal" class="number"><%= summary.total() %></span></div>
+    <div class="card">In transit<span id="sumTransit" class="number"><%= summary.inTransit() %></span></div>
+    <div class="card">Delivered<span id="sumDelivered" class="number"><%= summary.delivered() %></span></div>
+    <div class="card">Delayed<span id="sumDelayed" class="number"><%= summary.delayed() %></span></div>
   </div>
   <% if (error != null) { %><p class="error"><%= Html.esc(error) %></p><% } %>
   <form method="get" action="dashboard">
-    <label for="q">Search</label>
-    <input id="q" name="q" value="<%= Html.esc((String) request.getAttribute("query")) %>"
+    <label for="searchBox">Search</label>
+    <input id="searchBox" name="q" value="<%= Html.esc((String) request.getAttribute("query")) %>"
            placeholder="ID, sender, receiver or location">
-    <button type="submit">Search</button>
+    <select id="statusFilter" name="status"><option value="">All statuses</option><option>Picked Up</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Failed</option></select>
+    <button id="searchBtn" type="submit">Search</button>
   </form>
   <h2>Search results (<%= parcels.size() %>)</h2>
-  <table>
+  <table id="parcelTable">
     <tr><th>Parcel</th><th>Route</th><th>Status</th><th>Drill-down</th></tr>
     <% for (Parcel p : parcels) { %>
     <tr>
       <td><%= Html.esc(p.id()) %></td>
       <td><%= Html.esc(p.origin()) %> to <%= Html.esc(p.destination()) %></td>
       <td><%= Html.esc(p.status()) %></td>
-      <td><a href="dashboard?parcel=<%= Html.esc(p.id()) %>">View events</a></td>
+      <td><a href="parcel?id=<%= Html.esc(p.id()) %>">View events</a></td>
     </tr>
     <% } %>
   </table>
-  <% if (selected != null) { %>
-    <h2>Event drill-down: <%= Html.esc(selected.id()) %></h2>
-    <form method="post" action="dashboard">
-      <input type="hidden" name="parcelId" value="<%= Html.esc(selected.id()) %>">
-      <select name="status">
-        <option>In Transit</option><option>Delivered</option>
-        <option>Delayed</option><option>Exception</option>
-      </select>
-      <input name="location" placeholder="Location">
-      <input name="remarks" placeholder="Remarks">
-      <button type="submit">Record event</button>
-    </form>
-    <% if ("Delayed".equals(selected.status()) || "Exception".equals(selected.status())) { %>
-      <p class="alert"><strong>Alert:</strong> this parcel requires attention.</p>
-    <% } %>
-    <table>
-      <tr><th>Status</th><th>Location</th><th>Time</th><th>Remarks</th></tr>
-      <% for (ParcelEvent event : events) { %>
-      <tr><td><%= Html.esc(event.status()) %></td><td><%= Html.esc(event.location()) %></td>
-          <td><%= Html.esc(event.eventTime()) %></td><td><%= Html.esc(event.remarks()) %></td></tr>
-      <% } %>
-    </table>
-  <% } %>
+  <p><a href="alerts">View alerts and exceptions</a></p>
 </body>
 </html>
