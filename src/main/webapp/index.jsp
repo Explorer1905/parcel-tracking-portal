@@ -4,7 +4,9 @@
 <head><title>Parcel Tracking Portal</title></head>
 <body>
   <h1>Parcel Tracking Portal</h1>
-  <p>Application skeleton is running.</p>
-  <p><a href="health">Health check</a></p>
+  <ul>
+    <li><a href="parcels">Add and view parcels</a></li>
+    <li><a href="health">Health check</a></li>
+  </ul>
 </body>
 </html>
