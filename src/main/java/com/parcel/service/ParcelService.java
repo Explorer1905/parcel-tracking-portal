@@ -5,6 +5,9 @@ import com.parcel.model.Parcel;
 import com.parcel.model.ParcelEvent;
 import com.parcel.model.DashboardSummary;
 import java.util.List;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ParcelService {
     private final ParcelDao dao = new ParcelDao();
@@ -50,7 +53,11 @@ public class ParcelService {
         return dao.summary();
     }
 
-    public void addEvent(String id, String status, String location, String remarks) {
+    public List<Parcel> alerts() {
+        return dao.alerts();
+    }
+
+    public void addEvent(String id, String status, String location, String eventTime, String remarks) {
         id = clean(id);
         status = clean(status);
         location = clean(location);
@@ -61,10 +68,19 @@ public class ParcelService {
         if (find(id) == null) {
             throw new IllegalArgumentException("Parcel " + id + " was not found.");
         }
-        if (!List.of("In Transit", "Delivered", "Delayed", "Exception").contains(status)) {
+        if (!List.of("Picked Up", "In Transit", "Out for Delivery", "Delivered", "Failed").contains(status)) {
             throw new IllegalArgumentException("Choose a valid status.");
         }
-        dao.addEvent(id, status, location, remarks);
+        Timestamp timestamp;
+        try {
+            timestamp = eventTime == null || eventTime.isBlank()
+                    ? new Timestamp(System.currentTimeMillis())
+                    : Timestamp.valueOf(LocalDateTime.parse(eventTime,
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Event time must use YYYY-MM-DDTHH:MM.");
+        }
+        dao.addEvent(id, status, location, timestamp, remarks);
     }
 
     private String clean(String s) {
