@@ -6,7 +6,7 @@
   <h1>Parcel Tracking Portal</h1>
   <ul>
     <li><a href="parcels">Register a parcel</a></li>
-    <li><a href="dashboard">View tracking dashboard</a></li>
+    <li><a href="parcels">Parcels</a> | <a href="dashboard">Dashboard</a></li>
     <li><a href="health">Health check</a></li>
   </ul>
 </body>
