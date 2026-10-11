@@ -563,6 +563,61 @@ TASKS[5] = dict(
     ],
 )
 
+TASKS[6] = dict(
+    title="MVP Completion and Git Collaboration",
+    branch="task/06-mvp-completion",
+    filename="task-06-mvp-completion",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "To complete the essential Parcel Tracking Portal MVP functions: event entry, searchable dashboard, summary indicators, status drill-down and alert/exception view, while demonstrating feature branches, conflict resolution, tagging and a release-ready source baseline."),
+        ("h", "2. Features Delivered"),
+        ("bullets", [
+            "Event entry supports Picked Up, In Transit, Out for Delivery, Delivered and Failed statuses.",
+            "Events include location, optional remarks and an optional event time for backdated testing.",
+            "The dashboard supports parcel search and status filtering with total, in-transit, delivered and delayed indicators.",
+            "The parcel detail page at /parcel?id=... shows the full event history.",
+            "The alerts page lists Failed parcels and parcels whose latest non-delivered event is more than 48 hours old.",
+        ]),
+        ("h", "3. HTML Test ID Contract"),
+        ("table", ["Page", "IDs"], [
+            ["Add parcel", "parcelId, sender, receiver, origin, destination, addBtn, successMsg, errorMsg, parcelTable"],
+            ["Dashboard", "searchBox, statusFilter, searchBtn, parcelTable, sumTotal, sumTransit, sumDelivered, sumDelayed"],
+            ["Parcel detail", "eventStatus, eventLocation, eventTime, addEventBtn, eventTable"],
+            ["Alerts", "alertTable"],
+        ]),
+        ("h", "4. Git Collaboration"),
+        ("numbered", [
+            "Created feature/event-entry and feature/dashboard from the develop baseline.",
+            "Merged the event-entry feature into develop.",
+            "Created the required conflict when the dashboard branch changed the same index.jsp navigation line.",
+            "Resolved the conflict by retaining both parcel registration and dashboard navigation.",
+            "Committed the resolution with a merge-specific commit message.",
+        ]),
+        ("h", "5. Validation"),
+        ("table", ["Check", "Result"], [
+            ["Maven build", "BUILD SUCCESS"],
+            ["Compiled sources", "11 Java source files"],
+            ["WAR artifact", "target/parcel-tracking-portal.war"],
+            ["Release tag", "v1.0.0-mvp"],
+        ]),
+        ("h", "6. Commands Used"),
+        ("code", "git checkout develop\ngit checkout -b feature/event-entry\ngit checkout -b feature/dashboard\ngit merge feature/event-entry\ngit merge feature/dashboard\ngit add src/main/webapp/index.jsp\ngit commit -m \"merge: resolve index.jsp conflict between event-entry and dashboard\"\nmvn clean package\ngit tag -a v1.0.0-mvp -m \"Release-ready Parcel Tracking Portal MVP\"\ngit log --oneline --graph --all -15"),
+        ("h", "7. Screenshots"),
+        ("screenshots",),
+        ("h", "8. Deliverables Checklist"),
+        ("check", [
+            "Functional MVP completed",
+            "Second feature branch demonstrated",
+            "Merge conflict created and resolved",
+            "Collaboration graph and blame evidence captured",
+            "Release-ready source baseline tagged",
+            "Task 6 backlog item moved to Done",
+        ]),
+        ("h", "9. Conclusion"),
+        ("p", "The Parcel Tracking Portal MVP is complete and release-ready. The application supports event capture, search, status summaries, drill-down history and operational alerts. The Git history demonstrates parallel feature work, conflict resolution and a tagged release baseline."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
