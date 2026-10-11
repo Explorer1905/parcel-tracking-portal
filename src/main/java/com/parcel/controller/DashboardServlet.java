@@ -20,7 +20,7 @@ public class DashboardServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setAttribute("query", value(req.getParameter("q")));
         req.setAttribute("status", value(req.getParameter("status")));
-        req.setAttribute("parcels", service.search(req.getParameter("q")));
+        req.setAttribute("parcels", service.search(req.getParameter("q"), req.getParameter("status")));
         req.setAttribute("summary", service.summary());
         req.getRequestDispatcher("/WEB-INF/views/dashboard.jsp").forward(req, resp);
     }

@@ -41,6 +41,14 @@ public class ParcelService {
         return dao.find(query);
     }
 
+    public List<Parcel> search(String query, String status) {
+        List<Parcel> results = dao.find(query);
+        if (status == null || status.isBlank()) {
+            return results;
+        }
+        return results.stream().filter(parcel -> status.equals(parcel.status())).toList();
+    }
+
     public Parcel find(String id) {
         return id == null || id.isBlank() ? null : dao.findById(id.trim());
     }
