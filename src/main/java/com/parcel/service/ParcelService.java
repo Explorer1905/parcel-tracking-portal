@@ -2,6 +2,8 @@ package com.parcel.service;
 
 import com.parcel.dao.ParcelDao;
 import com.parcel.model.Parcel;
+import com.parcel.model.ParcelEvent;
+import com.parcel.model.DashboardSummary;
 import java.util.List;
 
 public class ParcelService {
@@ -30,6 +32,39 @@ public class ParcelService {
 
     public List<Parcel> listParcels() {
         return dao.findAll();
+    }
+
+    public List<Parcel> search(String query) {
+        return dao.find(query);
+    }
+
+    public Parcel find(String id) {
+        return id == null || id.isBlank() ? null : dao.findById(id.trim());
+    }
+
+    public List<ParcelEvent> events(String id) {
+        return dao.eventsFor(id);
+    }
+
+    public DashboardSummary summary() {
+        return dao.summary();
+    }
+
+    public void addEvent(String id, String status, String location, String remarks) {
+        id = clean(id);
+        status = clean(status);
+        location = clean(location);
+        remarks = clean(remarks);
+        if (id.isEmpty() || status.isEmpty()) {
+            throw new IllegalArgumentException("Parcel and status are required.");
+        }
+        if (find(id) == null) {
+            throw new IllegalArgumentException("Parcel " + id + " was not found.");
+        }
+        if (!List.of("In Transit", "Delivered", "Delayed", "Exception").contains(status)) {
+            throw new IllegalArgumentException("Choose a valid status.");
+        }
+        dao.addEvent(id, status, location, remarks);
     }
 
     private String clean(String s) {
