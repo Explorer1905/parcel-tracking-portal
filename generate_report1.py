@@ -906,7 +906,6 @@ TASKS[13] = dict(
         ("p", "The target node prerequisites are expressed as repeatable Ansible resources rather than manual setup steps. The inventory supports local WSL demonstration and can be changed to an SSH target without changing the playbook."),
     ],
 )
-
 TASKS[14] = dict(
     title="Automated Provisioning and Reliability Validation",
     branch="task/14-provisioning-reliability",
@@ -916,10 +915,10 @@ TASKS[14] = dict(
         ("p", "Provision a clean target with Ansible, deploy a known release, rerun automation to demonstrate repeatability, verify application health and recover by rolling back to a previous stable image."),
         ("h", "2. Provisioning and Deployment Design"),
         ("table", ["Area", "Automation"], [
-            ["Prerequisites", "Task 13 site.yml installs packages and creates the service identity and directories"],
-            ["Release deployment", "deploy.yml pulls an exact image tag and recreates parcel-portal-cd"],
+            ["Prerequisites", "site.yml installs packages and creates the service identity and directories"],
+            ["Release deployment", "deploy.yml pulls an exact image tag and reconciles parcel-portal-cd"],
             ["Health gate", "Ansible URI retries until HTTP 200 and body OK"],
-            ["Idempotence", "Prerequisite playbook is rerun and deployment is reconciled to the requested release"],
+            ["Idempotence", "A repeat deployment skips container replacement when the requested tag is already running"],
             ["Rollback", "rollback.yml restores a known stable image and repeats the health check"],
         ]),
         ("h", "3. Execution Commands"),
