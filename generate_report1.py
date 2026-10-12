@@ -664,6 +664,86 @@ TASKS[7] = dict(
     ],
 )
 
+TASKS[8] = dict(
+    title="Pipeline as Code and Server Deployment",
+    branch="task/08-pipeline-as-code",
+    filename="task-08-pipeline-as-code",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Create a Jenkins pipeline as code for the Parcel Tracking Portal. The pipeline checks out the repository, builds and packages the WAR, archives the artifact, and deploys it to Apache Tomcat using a parameterized environment setting."),
+        ("h", "2. Jenkinsfile"),
+        ("p", "The repository root contains a declarative Jenkinsfile with Checkout, Build, Package and Deploy to Tomcat stages. The pipeline uses the DEPLOY_ENV choice and TOMCAT_HOME string parameters so the deployment target is configurable without editing the pipeline."),
+        ("code", "pipeline {\n    agent any\n    parameters {\n        choice(name: 'DEPLOY_ENV', choices: ['local-tomcat', 'staging-tomcat'])\n        string(name: 'TOMCAT_HOME', defaultValue: '<Tomcat installation>')\n    }\n    stages {\n        stage('Checkout') { steps { checkout scm } }\n        stage('Build') { steps { bat 'mvn -B clean test' } }\n        stage('Package') {\n            steps {\n                bat 'mvn -B package -DskipTests'\n                archiveArtifacts artifacts: 'target/*.war', fingerprint: true\n            }\n        }\n        stage('Deploy to Tomcat') {\n            steps {\n                bat 'copy /Y target\\\\parcel-tracking-portal.war %TOMCAT_HOME%\\\\webapps\\\\'\n            }\n        }\n    }\n}"),
+        ("h", "3. Pipeline Configuration"),
+        ("table", ["Item", "Value"], [
+            ["Pipeline definition", "Pipeline script from SCM"],
+            ["Jenkinsfile location", "Jenkinsfile"],
+            ["Build tool", "Maven"],
+            ["Deployment server", "Apache Tomcat 10.1.60"],
+            ["Application URL", "http://localhost:8081/parcel-tracking-portal/"],
+            ["Health URL", "http://localhost:8081/parcel-tracking-portal/health"],
+            ["Parameterized settings", "DEPLOY_ENV and TOMCAT_HOME"],
+        ]),
+        ("h", "4. Verification"),
+        ("bullets", [
+            "The Jenkins pipeline run completes successfully through Checkout, Build, Package and Deploy to Tomcat.",
+            "The generated parcel-tracking-portal.war is archived by the pipeline.",
+            "The WAR is copied into Tomcat's webapps directory.",
+            "The deployed home page returns HTTP 200 at the application URL.",
+            "The health endpoint returns OK after deployment.",
+        ]),
+        ("h", "5. Screenshots"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Jenkinsfile committed to the repository",
+            "Checkout, build, package and deploy stages visible",
+            "At least one deployment parameter configured",
+            "Successful pipeline run captured",
+            "WAR artifact archived",
+            "Deployed application URL and health check verified",
+            "Task 8 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "The Jenkinsfile makes the build and Tomcat deployment repeatable from source control. A successful pipeline run produces and archives the WAR, deploys it to Tomcat and verifies the running Parcel Tracking Portal."),
+    ],
+)
+
+TASKS[9] = dict(
+    title="Selenium Test Design and Local Execution",
+    branch="task/09-selenium-tests",
+    filename="task-09-selenium-tests",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Identify critical Parcel Tracking Portal user journeys, automate them with Selenium WebDriver and JUnit 5, execute the suite locally through Maven, and capture screenshots when a test fails."),
+        ("h", "2. Test Plan"),
+        ("table", ["ID", "User journey", "Test data", "Assertions"], [
+            ["S-01", "Register a parcel", "Unique parcel ID; Mumbai to Pune", "Success message contains the parcel ID"],
+            ["S-02", "Search the dashboard", "Registered unique parcel ID", "Dashboard table contains the parcel"],
+            ["S-03", "Add a tracking event", "In Transit at Nashik", "Event table contains status and location"],
+            ["S-04", "Open alerts and exceptions", "Existing portal data", "Alert table is displayed"],
+        ]),
+        ("h", "3. Selenium Implementation"),
+        ("p", "ParcelPortalSeleniumTest.java uses Selenium WebDriver with Chrome, JUnit 5 lifecycle methods, explicit waits and stable element IDs from the application views. The base URL is configurable with selenium.baseUrl."),
+        ("code", "mvn test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal\n\n# Optional visible-browser execution\nmvn test -Dselenium.headless=false"),
+        ("h", "4. Failure Screenshot Mechanism"),
+        ("p", "A JUnit TestWatcher captures the current browser screen after a test failure. Screenshots are written to target/selenium-failures/<test-name>.png. Maven Surefire XML and text reports are written to target/surefire-reports."),
+        ("h", "5. Local Execution Evidence"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Four critical user journeys identified",
+            "Selenium WebDriver tests with assertions and test data added",
+            "Failure screenshot mechanism implemented",
+            "Suite executed locally through Maven",
+            "Surefire local test report generated",
+            "Task 9 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "The local Selenium suite verifies the highest-value parcel workflows through the browser and preserves diagnostic screenshots for failures, providing a repeatable baseline for later Jenkins test integration."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
