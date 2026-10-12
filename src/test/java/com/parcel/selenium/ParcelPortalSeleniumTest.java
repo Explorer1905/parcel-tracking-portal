@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.extension.TestWatcher;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -75,7 +76,11 @@ class ParcelPortalSeleniumTest {
         fill("searchBox", parcelId);
         driver.findElement(By.id("searchBtn")).click();
 
-        assertTrue(driver.findElement(By.id("parcelTable")).getText().contains(parcelId));
+        boolean parcelFound = new WebDriverWait(driver, Duration.ofSeconds(5))
+                .ignoring(StaleElementReferenceException.class)
+                .until(currentDriver -> currentDriver.findElement(By.id("parcelTable"))
+                        .getText().contains(parcelId));
+        assertTrue(parcelFound);
     }
 
     @Test
