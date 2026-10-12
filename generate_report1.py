@@ -824,6 +824,51 @@ TASKS[11] = dict(
     ],
 )
 
+TASKS[12] = dict(
+    title="Jenkins-Docker Continuous Deployment",
+    branch="task/12-jenkins-docker-cd",
+    filename="task-12-jenkins-docker-cd",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Extend the Jenkins pipeline so that successful build and Selenium test stages produce a versioned Docker image, publish it to a local registry, and deploy a fresh container automatically."),
+        ("h", "2. Pipeline Stages"),
+        ("table", ["Stage", "Implementation"], [
+            ["Build and test", "Maven compile and Selenium tests; failures stop all later stages"],
+            ["Package", "Maven WAR package with archived artifact"],
+            ["Build Docker Image", "Builds localhost:5000/parcel-tracking-portal:1.0.<Jenkins build number>"],
+            ["Publish to Local Registry", "Pushes the versioned and latest tags to registry:2"],
+            ["Deploy Fresh Container", "Pulls the exact versioned tag, removes the old container and starts a new one"],
+            ["Health verification", "Checks /parcel-tracking-portal/health and expects OK"],
+        ]),
+        ("h", "3. Local Registry and Jenkins Configuration"),
+        ("code", "docker run -d --restart=always --name parcel-registry -p 5000:5000 registry:2\n\n# Jenkins parameters\nREGISTRY_HOST=localhost:5000\nIMAGE_REPOSITORY=parcel-tracking-portal\nCONTAINER_NAME=parcel-portal-cd\nCONTAINER_PORT=8082"),
+        ("h", "4. Versioned Image and Container Evidence"),
+        ("code", "docker image ls localhost:5000/parcel-tracking-portal\ndocker pull localhost:5000/parcel-tracking-portal:1.0.<BUILD_NUMBER>\ndocker ps --filter name=parcel-portal-cd\ndocker logs parcel-portal-cd\ncurl.exe http://localhost:8082/parcel-tracking-portal/health"),
+        ("h", "5. Verification"),
+        ("bullets", [
+            "A successful Jenkins run shows Build, Selenium Tests, Package, Docker build, registry publish and fresh container deployment stages.",
+            "The local registry tag list contains the versioned image tag.",
+            "The deployed container was created from the exact versioned image tag.",
+            "The health endpoint returns OK after deployment.",
+            "A failed test run prevents image publication and container deployment.",
+        ]),
+        ("h", "6. Screenshots"),
+        ("screenshots",),
+        ("h", "7. Deliverables Checklist"),
+        ("check", [
+            "Jenkinsfile updated with Docker build and publish stages",
+            "Versioned image created",
+            "Local registry evidence captured",
+            "Fresh container deployed by Jenkins",
+            "Health endpoint verified",
+            "End-to-end successful pipeline run captured",
+            "Task 12 backlog item moved to Done",
+        ]),
+        ("h", "8. Conclusion"),
+        ("p", "Jenkins now provides continuous delivery from a tested commit to a versioned registry image and a fresh running container. The image tag, registry response, container logs and health check make the deployment reproducible and auditable."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
