@@ -507,6 +507,117 @@ TASKS[4] = dict(
     ],
 )
 
+TASKS[5] = dict(
+    title="Application Deployment and Testing",
+    branch="develop",
+    filename="task-05-deployment-testing",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "To build the Parcel Tracking Portal, deploy the generated WAR file to Apache Tomcat, verify the application in a browser and confirm the health-check endpoint responds successfully."),
+        ("h", "2. Environment"),
+        ("table", ["Item", "Value"], [
+            ["Operating system", "Windows"],
+            ["Java", "JDK 22"],
+            ["Build tool", "Apache Maven"],
+            ["Application server", "Apache Tomcat 10.1.60"],
+            ["Tomcat port", "8081"],
+            ["Application URL", "http://localhost:8081/parcel-tracking-portal/"],
+        ]),
+        ("h", "3. Build and Deployment"),
+        ("numbered", [
+            "Updated the local develop branch after merging the parcel-entry feature.",
+            "Ran mvn clean package successfully.",
+            "Verified that target/parcel-tracking-portal.war was generated.",
+            "Copied the WAR file into Tomcat's webapps directory.",
+            "Configured Tomcat to use port 8081 because Jenkins was already using port 8080.",
+            "Set JAVA_HOME to the installed JDK 22 directory and started Tomcat.",
+        ]),
+        ("h", "4. Functional Verification"),
+        ("table", ["Test", "Result"], [
+            ["Tomcat listener on port 8081", "Pass"],
+            ["Portal home page", "HTTP 200"],
+            ["Health endpoint /health", "HTTP 200; response OK"],
+            ["Parcel management link", "Available from the home page"],
+        ]),
+        ("h", "5. Commands Used"),
+        ("code", "git checkout develop\ngit pull origin develop\nmvn clean package\nCopy-Item target\\parcel-tracking-portal.war <tomcat>\\webapps\\ -Force\n$env:JAVA_HOME = 'C:\\Program Files\\Java\\jdk-22'\n.\\startup.bat\nhttp://localhost:8081/parcel-tracking-portal/\nhttp://localhost:8081/parcel-tracking-portal/health"),
+        ("h", "6. Issues Faced and Fixes"),
+        ("bullets", [
+            "Tomcat initially could not start because JAVA_HOME was not defined; fixed by setting JAVA_HOME to C:\\Program Files\\Java\\jdk-22.",
+            "Port 8080 was already occupied by Jenkins, so the Tomcat HTTP connector was changed to port 8081.",
+            "Requests sent to port 8080 returned Jenkins responses and 404 errors; testing the configured Tomcat port 8081 returned the application successfully.",
+        ]),
+        ("h", "7. Screenshots"),
+        ("screenshots",),
+        ("h", "8. Deliverables Checklist"),
+        ("check", [
+            "Maven build completed successfully",
+            "WAR file generated",
+            "WAR deployed to Apache Tomcat",
+            "Portal home page verified",
+            "Health endpoint verified with response OK",
+            "Deployment screenshots added to the repository",
+        ]),
+        ("h", "9. Conclusion"),
+        ("p", "The Parcel Tracking Portal was built successfully, deployed to Apache Tomcat 10.1.60 and tested on port 8081. The home page returned HTTP 200 and the health endpoint returned OK, confirming that the application was running correctly."),
+    ],
+)
+
+TASKS[6] = dict(
+    title="MVP Completion and Git Collaboration",
+    branch="task/06-mvp-completion",
+    filename="task-06-mvp-completion",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "To complete the essential Parcel Tracking Portal MVP functions: event entry, searchable dashboard, summary indicators, status drill-down and alert/exception view, while demonstrating feature branches, conflict resolution, tagging and a release-ready source baseline."),
+        ("h", "2. Features Delivered"),
+        ("bullets", [
+            "Event entry supports Picked Up, In Transit, Out for Delivery, Delivered and Failed statuses.",
+            "Events include location, optional remarks and an optional event time for backdated testing.",
+            "The dashboard supports parcel search and status filtering with total, in-transit, delivered and delayed indicators.",
+            "The parcel detail page at /parcel?id=... shows the full event history.",
+            "The alerts page lists Failed parcels and parcels whose latest non-delivered event is more than 48 hours old.",
+        ]),
+        ("h", "3. HTML Test ID Contract"),
+        ("table", ["Page", "IDs"], [
+            ["Add parcel", "parcelId, sender, receiver, origin, destination, addBtn, successMsg, errorMsg, parcelTable"],
+            ["Dashboard", "searchBox, statusFilter, searchBtn, parcelTable, sumTotal, sumTransit, sumDelivered, sumDelayed"],
+            ["Parcel detail", "eventStatus, eventLocation, eventTime, addEventBtn, eventTable"],
+            ["Alerts", "alertTable"],
+        ]),
+        ("h", "4. Git Collaboration"),
+        ("numbered", [
+            "Created feature/event-entry and feature/dashboard from the develop baseline.",
+            "Merged the event-entry feature into develop.",
+            "Created the required conflict when the dashboard branch changed the same index.jsp navigation line.",
+            "Resolved the conflict by retaining both parcel registration and dashboard navigation.",
+            "Committed the resolution with a merge-specific commit message.",
+        ]),
+        ("h", "5. Validation"),
+        ("table", ["Check", "Result"], [
+            ["Maven build", "BUILD SUCCESS"],
+            ["Compiled sources", "11 Java source files"],
+            ["WAR artifact", "target/parcel-tracking-portal.war"],
+            ["Release tag", "v1.0.0-mvp"],
+        ]),
+        ("h", "6. Commands Used"),
+        ("code", "git checkout develop\ngit checkout -b feature/event-entry\ngit checkout -b feature/dashboard\ngit merge feature/event-entry\ngit merge feature/dashboard\ngit add src/main/webapp/index.jsp\ngit commit -m \"merge: resolve index.jsp conflict between event-entry and dashboard\"\nmvn clean package\ngit tag -a v1.0.0-mvp -m \"Release-ready Parcel Tracking Portal MVP\"\ngit log --oneline --graph --all -15"),
+        ("h", "7. Screenshots"),
+        ("screenshots",),
+        ("h", "8. Deliverables Checklist"),
+        ("check", [
+            "Functional MVP completed",
+            "Second feature branch demonstrated",
+            "Merge conflict created and resolved",
+            "Collaboration graph and blame evidence captured",
+            "Release-ready source baseline tagged",
+            "Task 6 backlog item moved to Done",
+        ]),
+        ("h", "9. Conclusion"),
+        ("p", "The Parcel Tracking Portal MVP is complete and release-ready. The application supports event capture, search, status summaries, drill-down history and operational alerts. The Git history demonstrates parallel feature work, conflict resolution and a tagged release baseline."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
