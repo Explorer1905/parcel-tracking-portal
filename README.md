@@ -90,6 +90,43 @@ Chrome runs headlessly by default. Set `-Dselenium.headless=false` to watch the
 browser. Failed tests save PNG screenshots in `target/selenium-failures`, and
 the Maven Surefire report is written under `target/surefire-reports`.
 
+## Ansible configuration management
+
+Task 13 defines the Ubuntu/Debian target prerequisites in
+[`ansible/configuration-spec.md`](ansible/configuration-spec.md). The
+playbook installs Java, Maven, Docker and utilities, creates the least-
+privileged `parcel` service account, creates application/configuration/data
+directories, writes the managed configuration file, starts Docker at boot and
+opens the application, Tomcat and registry ports.
+
+Run it from Ubuntu/WSL:
+
+```text
+cd ansible
+ansible-playbook -i inventory.ini site.yml --check --diff
+ansible-playbook -i inventory.ini site.yml
+ansible-playbook -i inventory.ini site.yml
+```
+
+The final run should be idempotent and report no changes. Save the first
+execution output as `docs/reports/task-13-ansible-first-execution.log`.
+
+On WSL with Docker Desktop integration, Ubuntu may not provide a native
+`docker.service`; the playbook detects this and leaves the already-running
+Docker Desktop engine in control. On a normal Ubuntu server, it enables and
+starts the native Docker service.
+
+## Automated provisioning and rollback
+
+Task 14 extends the prerequisite playbook with
+[`ansible/deploy.yml`](ansible/deploy.yml) and
+[`ansible/rollback.yml`](ansible/rollback.yml). The deployment playbook pulls
+an exact image tag, replaces the container, waits for the health endpoint and
+records the active release. The rollback playbook restores a known stable tag
+and performs the same health check. See
+[`ansible/reliability-runbook.md`](ansible/reliability-runbook.md) for the
+first execution, idempotence and recovery commands.
+
 ## Branch strategy
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Each task uses a `task/NN-short-name` branch merged into `develop`.
