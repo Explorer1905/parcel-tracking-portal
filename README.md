@@ -47,11 +47,33 @@ docker rm -f parcel-portal
 ## Jenkins pipeline deployment
 
 The root [`Jenkinsfile`](Jenkinsfile) defines Checkout, Build, Selenium Tests,
-Package and Deploy stages. The pipeline accepts `DEPLOY_ENV` and `TOMCAT_HOME`
-parameters, publishes Maven Surefire XML results, archives
-`target/parcel-tracking-portal.war`, and copies it to the selected Tomcat
-installation. For the local Windows setup, use `local-tomcat` and the Tomcat
-directory configured on the Jenkins agent, then verify:
+Package, Docker build, registry publish, fresh container deployment and Deploy
+to Tomcat stages. The pipeline accepts `DEPLOY_ENV`, `TOMCAT_HOME`,
+`REGISTRY_HOST`, `IMAGE_REPOSITORY`, `CONTAINER_NAME` and `CONTAINER_PORT`
+parameters. Each successful build creates a versioned image tag
+`1.0.<Jenkins build number>`, pushes it to the local registry, pulls that exact
+tag and starts a fresh container. It also publishes Maven Surefire XML results
+and archives `target/parcel-tracking-portal.war`.
+
+Start a local registry once before running the Jenkins job:
+
+```text
+docker run -d --restart=always --name parcel-registry -p 5000:5000 registry:2
+```
+
+Use `localhost:5000` for `REGISTRY_HOST`, `parcel-tracking-portal` for
+`IMAGE_REPOSITORY`, `parcel-portal-cd` for `CONTAINER_NAME` and `8082` for
+`CONTAINER_PORT`. The pipeline creates the registry if it is not already
+present. After a successful run, verify:
+
+```text
+docker image ls localhost:5000/parcel-tracking-portal
+docker ps --filter name=parcel-portal-cd
+curl.exe http://localhost:8082/parcel-tracking-portal/health
+```
+
+For the local Windows setup, use `local-tomcat` and the Tomcat directory
+configured on the Jenkins agent, then verify:
 
 `http://localhost:8081/parcel-tracking-portal/`
 
