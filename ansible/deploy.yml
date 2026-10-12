@@ -1,0 +1,60 @@
+---
+- name: Deploy and validate a Parcel Tracking Portal release
+  hosts: parcel_nodes
+  become: true
+  gather_facts: false
+
+  vars:
+    docker_executable: /usr/bin/docker
+    container_name: parcel-portal-cd
+    image_repository: localhost:5000/parcel-tracking-portal
+    release_tag: "1.0.7"
+    host_port: 8082
+    health_url: "http://127.0.0.1:{{ host_port }}/parcel-tracking-portal/health"
+
+  tasks:
+    - name: Check the Docker executable
+      ansible.builtin.command:
+        cmd: "{{ docker_executable }} version --format '{{ '{{' }}.Server.Version{{ '}}' }}'"
+      changed_when: false
+
+    - name: Pull the requested release
+      ansible.builtin.command:
+        cmd: "{{ docker_executable }} pull {{ image_repository }}:{{ release_tag }}"
+      changed_when: false
+
+    - name: Inspect the running application container
+      ansible.builtin.command:
+        cmd: "{{ docker_executable }} inspect --format '{{ '{{' }}.Config.Image{{ '}}' }}' {{ container_name }}"
+      register: current_container_image
+      changed_when: false
+      failed_when: false
+
+    - name: Replace the running application container when the release differs
+      ansible.builtin.shell:
+        cmd: >-
+          {{ docker_executable }} rm -f {{ container_name }} >/dev/null 2>&1 || true;
+          {{ docker_executable }} run -d --name {{ container_name }}
+          -p {{ host_port }}:8080 {{ image_repository }}:{{ release_tag }}
+      register: container_deployment
+      when: current_container_image.stdout | trim != image_repository ~ ":" ~ release_tag
+
+    - name: Wait for the release health endpoint
+      ansible.builtin.uri:
+        url: "{{ health_url }}"
+        status_code: 200
+        return_content: true
+      register: health_check
+      until:
+        - health_check.status == 200
+        - health_check.content | trim == "OK"
+      retries: 30
+      delay: 2
+
+    - name: Record deployed release
+      ansible.builtin.copy:
+        dest: /etc/parcel-tracking-portal/active-release
+        content: "{{ image_repository }}:{{ release_tag }}\n"
+        owner: parcel
+        group: parcel
+        mode: "0640"
