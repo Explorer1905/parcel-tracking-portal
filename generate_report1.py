@@ -869,6 +869,82 @@ TASKS[12] = dict(
     ],
 )
 
+TASKS[13] = dict(
+    title="Configuration Management Script",
+    branch="task/13-configuration-management",
+    filename="task-13-configuration-management",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Identify the Parcel Tracking Portal server prerequisites and configure an Ubuntu/Debian target node with an idempotent Ansible playbook."),
+        ("h", "2. Configuration Specification"),
+        ("table", ["Category", "Required state"], [
+            ["Packages", "ca-certificates, curl, docker.io, maven, openjdk-17-jre-headless"],
+            ["Identity", "System group and nologin user: parcel"],
+            ["Folders", "/opt/parcel-tracking-portal, /etc/parcel-tracking-portal, /var/lib/parcel-tracking-portal"],
+            ["Files", "Managed application.properties with ownership and mode 0640"],
+            ["Ports", "8082 application, 8080 Tomcat, 5000 registry"],
+            ["Service", "Docker enabled and started"],
+            ["Firewall", "Required TCP ports allowed on Debian-family targets"],
+        ]),
+        ("h", "3. Ansible Inventory and Playbook"),
+        ("p", "ansible/inventory.ini targets the local Ubuntu/WSL node for a reproducible first execution. ansible/site.yml installs packages, creates the service identity and directories, writes configuration, starts Docker and configures firewall ports."),
+        ("code", "cd ansible\nansible-playbook -i inventory.ini site.yml --check --diff\nansible-playbook -i inventory.ini site.yml\nansible-playbook -i inventory.ini site.yml"),
+        ("h", "4. First Execution and Idempotence"),
+        ("p", "The first normal execution log is saved as docs/reports/task-13-ansible-first-execution.log. A second normal execution is run to demonstrate idempotence; resources remain present and no unnecessary changes are made."),
+        ("h", "5. Screenshots"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Configuration specification added",
+            "Ansible inventory added",
+            "Ansible playbook configures packages, identity, folders, files, ports and service",
+            "First execution log captured",
+            "Idempotent second execution verified",
+            "Task 13 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "The target node prerequisites are expressed as repeatable Ansible resources rather than manual setup steps. The inventory supports local WSL demonstration and can be changed to an SSH target without changing the playbook."),
+    ],
+)
+
+TASKS[14] = dict(
+    title="Automated Provisioning and Reliability Validation",
+    branch="task/14-provisioning-reliability",
+    filename="task-14-provisioning-reliability",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Provision a clean target with Ansible, deploy a known release, rerun automation to demonstrate repeatability, verify application health and recover by rolling back to a previous stable image."),
+        ("h", "2. Provisioning and Deployment Design"),
+        ("table", ["Area", "Automation"], [
+            ["Prerequisites", "Task 13 site.yml installs packages and creates the service identity and directories"],
+            ["Release deployment", "deploy.yml pulls an exact image tag and recreates parcel-portal-cd"],
+            ["Health gate", "Ansible URI retries until HTTP 200 and body OK"],
+            ["Idempotence", "Prerequisite playbook is rerun and deployment is reconciled to the requested release"],
+            ["Rollback", "rollback.yml restores a known stable image and repeats the health check"],
+        ]),
+        ("h", "3. Execution Commands"),
+        ("code", "sudo ansible-playbook -i inventory.ini site.yml -e ansible_become=false\nsudo ansible-playbook -i inventory.ini deploy.yml -e ansible_become=false -e release_tag=1.0.7\nsudo ansible-playbook -i inventory.ini deploy.yml -e ansible_become=false -e release_tag=1.0.7\nsudo ansible-playbook -i inventory.ini rollback.yml -e ansible_become=false -e rollback_tag=1.0.7"),
+        ("h", "4. Reliability Verification"),
+        ("code", "docker ps --filter name=parcel-portal-cd\ncat /etc/parcel-tracking-portal/active-release\ncurl http://127.0.0.1:8082/parcel-tracking-portal/health"),
+        ("h", "5. Evidence"),
+        ("p", "Capture the provisioning recap, repeat execution recap, deployed version and health response, then capture the rollback container and recovered health response. Save the first execution output as docs/reports/task-14-provisioning-first-execution.log."),
+        ("h", "6. Screenshots"),
+        ("screenshots",),
+        ("h", "7. Deliverables Checklist"),
+        ("check", [
+            "Clean target provisioned with Ansible",
+            "Release container deployed from an exact versioned image",
+            "Automation rerun successfully",
+            "Health endpoint returned OK",
+            "Rollback to the previous stable release completed",
+            "Recovery health check returned OK",
+            "Task 14 backlog item moved to Done",
+        ]),
+        ("h", "8. Conclusion"),
+        ("p", "The portal environment can be provisioned and recovered through repeatable automation. Exact image tags, health gating and an explicit stable rollback make the container deployment auditable and recoverable."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
