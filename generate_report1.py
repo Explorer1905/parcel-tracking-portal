@@ -869,6 +869,43 @@ TASKS[12] = dict(
     ],
 )
 
+TASKS[13] = dict(
+    title="Configuration Management Script",
+    branch="task/13-configuration-management",
+    filename="task-13-configuration-management",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Identify the Parcel Tracking Portal server prerequisites and configure an Ubuntu/Debian target node with an idempotent Ansible playbook."),
+        ("h", "2. Configuration Specification"),
+        ("table", ["Category", "Required state"], [
+            ["Packages", "ca-certificates, curl, docker.io, maven, openjdk-17-jre-headless"],
+            ["Identity", "System group and nologin user: parcel"],
+            ["Folders", "/opt/parcel-tracking-portal, /etc/parcel-tracking-portal, /var/lib/parcel-tracking-portal"],
+            ["Files", "Managed application.properties with ownership and mode 0640"],
+            ["Ports", "8082 application, 8080 Tomcat, 5000 registry"],
+            ["Service", "Docker enabled and started"],
+            ["Firewall", "Required TCP ports allowed on Debian-family targets"],
+        ]),
+        ("h", "3. Ansible Inventory and Playbook"),
+        ("p", "ansible/inventory.ini targets the local Ubuntu/WSL node for a reproducible first execution. ansible/site.yml installs packages, creates the service identity and directories, writes configuration, starts Docker and configures firewall ports."),
+        ("code", "cd ansible\nansible-playbook -i inventory.ini site.yml --check --diff\nansible-playbook -i inventory.ini site.yml\nansible-playbook -i inventory.ini site.yml"),
+        ("h", "4. First Execution and Idempotence"),
+        ("p", "The first normal execution log is saved as docs/reports/task-13-ansible-first-execution.log. A second normal execution is run to demonstrate idempotence; resources remain present and no unnecessary changes are made."),
+        ("h", "5. Screenshots"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Configuration specification added",
+            "Ansible inventory added",
+            "Ansible playbook configures packages, identity, folders, files, ports and service",
+            "First execution log captured",
+            "Idempotent second execution verified",
+            "Task 13 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "The target node prerequisites are expressed as repeatable Ansible resources rather than manual setup steps. The inventory supports local WSL demonstration and can be changed to an SSH target without changing the playbook."),
+    ],
+)
 TASKS[14] = dict(
     title="Automated Provisioning and Reliability Validation",
     branch="task/14-provisioning-reliability",
