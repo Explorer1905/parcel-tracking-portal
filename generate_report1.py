@@ -709,6 +709,41 @@ TASKS[8] = dict(
     ],
 )
 
+TASKS[9] = dict(
+    title="Selenium Test Design and Local Execution",
+    branch="task/09-selenium-tests",
+    filename="task-09-selenium-tests",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Identify critical Parcel Tracking Portal user journeys, automate them with Selenium WebDriver and JUnit 5, execute the suite locally through Maven, and capture screenshots when a test fails."),
+        ("h", "2. Test Plan"),
+        ("table", ["ID", "User journey", "Test data", "Assertions"], [
+            ["S-01", "Register a parcel", "Unique parcel ID; Mumbai to Pune", "Success message contains the parcel ID"],
+            ["S-02", "Search the dashboard", "Registered unique parcel ID", "Dashboard table contains the parcel"],
+            ["S-03", "Add a tracking event", "In Transit at Nashik", "Event table contains status and location"],
+            ["S-04", "Open alerts and exceptions", "Existing portal data", "Alert table is displayed"],
+        ]),
+        ("h", "3. Selenium Implementation"),
+        ("p", "ParcelPortalSeleniumTest.java uses Selenium WebDriver with Chrome, JUnit 5 lifecycle methods, explicit waits and stable element IDs from the application views. The base URL is configurable with selenium.baseUrl."),
+        ("code", "mvn test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal\n\n# Optional visible-browser execution\nmvn test -Dselenium.headless=false"),
+        ("h", "4. Failure Screenshot Mechanism"),
+        ("p", "A JUnit TestWatcher captures the current browser screen after a test failure. Screenshots are written to target/selenium-failures/<test-name>.png. Maven Surefire XML and text reports are written to target/surefire-reports."),
+        ("h", "5. Local Execution Evidence"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Four critical user journeys identified",
+            "Selenium WebDriver tests with assertions and test data added",
+            "Failure screenshot mechanism implemented",
+            "Suite executed locally through Maven",
+            "Surefire local test report generated",
+            "Task 9 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "The local Selenium suite verifies the highest-value parcel workflows through the browser and preserves diagnostic screenshots for failures, providing a repeatable baseline for later Jenkins test integration."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
