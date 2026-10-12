@@ -23,7 +23,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'mvn -B clean test'
+                bat 'mvn -B clean compile'
+            }
+        }
+
+        stage('Selenium Tests') {
+            steps {
+                bat 'mvn -B test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal'
             }
         }
 
@@ -49,8 +55,11 @@ pipeline {
     }
 
     post {
+        always {
+            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
+        }
         success {
-            echo 'Pipeline completed: build, package and Tomcat deployment succeeded.'
+            echo 'Pipeline completed: build, Selenium tests, package and Tomcat deployment succeeded.'
         }
         failure {
             echo 'Pipeline failed. Review the stage log before redeploying.'
