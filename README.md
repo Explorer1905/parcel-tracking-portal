@@ -116,6 +116,12 @@ On WSL with Docker Desktop integration, Ubuntu may not provide a native
 Docker Desktop engine in control. On a normal Ubuntu server, it enables and
 starts the native Docker service.
 
+## Final release and viva
+
+The complete demonstration sequence, architecture summary, evidence checklist,
+troubleshooting guide, limitations, future enhancements and viva questions are
+in [`docs/final-release-runbook.md`](docs/final-release-runbook.md).
+
 ## Automated provisioning and rollback
 
 Task 14 extends the prerequisite playbook with
