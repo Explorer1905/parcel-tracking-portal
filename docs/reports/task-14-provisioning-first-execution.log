@@ -1,0 +1,40 @@
+
+PLAY [Configure Parcel Tracking Portal node] ***********************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [portal-node]
+
+TASK [Install server prerequisite packages] ************************************
+ok: [portal-node]
+
+TASK [Create application group] ************************************************
+ok: [portal-node]
+
+TASK [Create application service user] *****************************************
+ok: [portal-node]
+
+TASK [Create application directories] ******************************************
+ok: [portal-node] => (item={'path': '/opt/parcel-tracking-portal', 'mode': '0755'})
+ok: [portal-node] => (item={'path': '/etc/parcel-tracking-portal', 'mode': '0750'})
+ok: [portal-node] => (item={'path': '/var/lib/parcel-tracking-portal', 'mode': '0750'})
+
+TASK [Install managed application configuration] *******************************
+ok: [portal-node]
+
+TASK [Discover available services] *********************************************
+ok: [portal-node]
+
+TASK [Enable and start Docker] *************************************************
+ok: [portal-node]
+
+TASK [Report Docker service limitation on WSL or Docker Desktop] ***************
+skipping: [portal-node]
+
+TASK [Allow application and registry ports through UFW] ************************
+ok: [portal-node] => (item=8082)
+ok: [portal-node] => (item=5000)
+ok: [portal-node] => (item=8080)
+
+PLAY RECAP *********************************************************************
+portal-node                : ok=9    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
