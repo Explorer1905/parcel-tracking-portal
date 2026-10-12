@@ -618,6 +618,52 @@ TASKS[6] = dict(
     ],
 )
 
+TASKS[7] = dict(
+    title="Jenkins Installation and Continuous Integration Job",
+    branch="task/07-jenkins-ci",
+    filename="task-07-jenkins-ci",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "To configure Jenkins for the Parcel Tracking Portal, create a Maven continuous-integration job triggered by SCM polling, archive the WAR artifact and verify successful and failed build evidence."),
+        ("h", "2. Jenkins Configuration"),
+        ("table", ["Item", "Value"], [
+            ["Jenkins URL", "http://localhost:8080"],
+            ["Job name", "parcel-ci-build"],
+            ["Job type", "Freestyle project"],
+            ["Repository", "https://github.com/Explorer1905/parcel-tracking-portal.git"],
+            ["Branch", "*/develop"],
+            ["SCM trigger", "Poll SCM: H/2 * * * *"],
+            ["Archived artifact", "target/*.war"],
+        ]),
+        ("h", "3. Tool Configuration"),
+        ("table", ["Tool", "Configured value"], [
+            ["JDK", "JDK22 - C:\\Program Files\\Java\\jdk-22"],
+            ["Maven", "Maven3 - C:\\DevTools\\apache-maven-3.9.16"],
+            ["Git", "C:\\Program Files\\Git\\cmd\\git.exe"],
+        ]),
+        ("h", "4. Build Step"),
+        ("code", "set \"JAVA_HOME=C:\\Program Files\\Java\\jdk-22\"\nset \"PATH=C:\\DevTools\\apache-maven-3.9.16\\bin;%JAVA_HOME%\\bin;%PATH%\"\nmvn -B clean package"),
+        ("h", "5. Verification"),
+        ("bullets", [
+            "Build Now completed successfully with BUILD SUCCESS and Finished: SUCCESS.",
+            "The parcel-tracking-portal.war file was archived.",
+            "The job was configured to poll the develop branch for SCM changes.",
+        ]),
+        ("h", "6. Screenshots"),
+        ("screenshots",),
+        ("h", "7. Deliverables Checklist"),
+        ("check", [
+            "Jenkins job created",
+            "JDK, Maven and Git tools configured",
+            "Successful Maven build verified",
+            "WAR artifact archived",
+            "Task 7 backlog item moved to Done",
+        ]),
+        ("h", "8. Conclusion"),
+        ("p", "The Jenkins continuous-integration job builds the develop branch with Maven and archives the generated WAR artifact."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
