@@ -618,6 +618,56 @@ TASKS[6] = dict(
     ],
 )
 
+TASKS[7] = dict(
+    title="Jenkins Installation and Continuous Integration Job",
+    branch="task/07-jenkins-ci",
+    filename="task-07-jenkins-ci",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "To configure Jenkins for the Parcel Tracking Portal, create a Maven continuous-integration job triggered by SCM polling, archive the WAR artifact and verify successful and failed build evidence."),
+        ("h", "2. Jenkins Configuration"),
+        ("table", ["Item", "Value"], [
+            ["Jenkins URL", "http://localhost:8080"],
+            ["Job name", "parcel-ci-build"],
+            ["Job type", "Freestyle project"],
+            ["Repository", "https://github.com/Explorer1905/parcel-tracking-portal.git"],
+            ["Branch", "*/develop"],
+            ["SCM trigger", "Poll SCM: H/2 * * * *"],
+            ["Archived artifact", "target/*.war"],
+        ]),
+        ("h", "3. Tool Configuration"),
+        ("table", ["Tool", "Configured value"], [
+            ["JDK", "JDK22 - C:\\Program Files\\Java\\jdk-22"],
+            ["Maven", "Maven3 - C:\\DevTools\\apache-maven-3.9.16"],
+            ["Git", "C:\\Program Files\\Git\\cmd\\git.exe"],
+        ]),
+        ("h", "4. Build Step"),
+        ("code", "set \"JAVA_HOME=C:\\Program Files\\Java\\jdk-22\"\nset \"PATH=C:\\DevTools\\apache-maven-3.9.16\\bin;%JAVA_HOME%\\bin;%PATH%\"\nmvn -B clean package"),
+        ("h", "5. Verification"),
+        ("bullets", [
+            "Build Now completes with BUILD SUCCESS and Finished: SUCCESS.",
+            "The parcel-tracking-portal.war file is visible under the archived artifacts.",
+            "An SCM-triggered build is recorded after a commit is merged into develop.",
+            "A deliberately failing build is captured, then the fixed commit produces a green build.",
+        ]),
+        ("h", "6. Screenshots"),
+        ("screenshots",),
+        ("h", "7. Deliverables Checklist"),
+        ("check", [
+            "Jenkins security and dashboard verified",
+            "Required plugins verified",
+            "JDK, Maven and Git tools configured",
+            "parcel-ci-build job created",
+            "Successful build and archived WAR verified",
+            "SCM polling trigger demonstrated",
+            "Failure and recovery evidence captured",
+            "Task 7 backlog item moved to Done",
+        ]),
+        ("h", "8. Conclusion"),
+        ("p", "The Jenkins continuous-integration job provides an automated Maven build for the develop branch and archives the release WAR artifact. The captured build history demonstrates both successful and failed-build recovery behavior."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
