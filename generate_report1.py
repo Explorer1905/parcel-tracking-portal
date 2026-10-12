@@ -869,6 +869,44 @@ TASKS[12] = dict(
     ],
 )
 
+TASKS[14] = dict(
+    title="Automated Provisioning and Reliability Validation",
+    branch="task/14-provisioning-reliability",
+    filename="task-14-provisioning-reliability",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Provision a clean target with Ansible, deploy a known release, rerun automation to demonstrate repeatability, verify application health and recover by rolling back to a previous stable image."),
+        ("h", "2. Provisioning and Deployment Design"),
+        ("table", ["Area", "Automation"], [
+            ["Prerequisites", "site.yml installs packages and creates the service identity and directories"],
+            ["Release deployment", "deploy.yml pulls an exact image tag and reconciles parcel-portal-cd"],
+            ["Health gate", "Ansible URI retries until HTTP 200 and body OK"],
+            ["Idempotence", "A repeat deployment skips container replacement when the requested tag is already running"],
+            ["Rollback", "rollback.yml restores a known stable image and repeats the health check"],
+        ]),
+        ("h", "3. Execution Commands"),
+        ("code", "sudo ansible-playbook -i inventory.ini site.yml -e ansible_become=false\nsudo ansible-playbook -i inventory.ini deploy.yml -e ansible_become=false -e release_tag=1.0.7\nsudo ansible-playbook -i inventory.ini deploy.yml -e ansible_become=false -e release_tag=1.0.7\nsudo ansible-playbook -i inventory.ini rollback.yml -e ansible_become=false -e rollback_tag=1.0.7"),
+        ("h", "4. Reliability Verification"),
+        ("code", "docker ps --filter name=parcel-portal-cd\ncat /etc/parcel-tracking-portal/active-release\ncurl http://127.0.0.1:8082/parcel-tracking-portal/health"),
+        ("h", "5. Evidence"),
+        ("p", "Capture the provisioning recap, repeat execution recap, deployed version and health response, then capture the rollback container and recovered health response. Save the first execution output as docs/reports/task-14-provisioning-first-execution.log."),
+        ("h", "6. Screenshots"),
+        ("screenshots",),
+        ("h", "7. Deliverables Checklist"),
+        ("check", [
+            "Clean target provisioned with Ansible",
+            "Release container deployed from an exact versioned image",
+            "Automation rerun successfully",
+            "Health endpoint returned OK",
+            "Rollback to the previous stable release completed",
+            "Recovery health check returned OK",
+            "Task 14 backlog item moved to Done",
+        ]),
+        ("h", "8. Conclusion"),
+        ("p", "The portal environment can be provisioned and recovered through repeatable automation. Exact image tags, health gating and an explicit stable rollback make the container deployment auditable and recoverable."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
