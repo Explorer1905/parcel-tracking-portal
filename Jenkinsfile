@@ -109,10 +109,9 @@ pipeline {
                     "%DOCKER_EXE%" rm -f "%CONTAINER_NAME%" >nul 2>&1
                     "%DOCKER_EXE%" pull "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%"
                     "%DOCKER_EXE%" run -d --name "%CONTAINER_NAME%" -p "%CONTAINER_PORT%:8080" "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%"
-                    timeout /t 10 /nobreak >nul
                     "%DOCKER_EXE%" ps --filter "name=%CONTAINER_NAME%"
                     "%DOCKER_EXE%" logs "%CONTAINER_NAME%"
-                    curl.exe --fail http://localhost:%CONTAINER_PORT%/parcel-tracking-portal/health
+                    curl.exe --fail --retry 15 --retry-delay 2 --retry-connrefused http://localhost:%CONTAINER_PORT%/parcel-tracking-portal/health
                 '''
             }
         }
