@@ -24,8 +24,9 @@ The application skeleton also provides a health check at `/health`.
 
 ## Jenkins pipeline deployment
 
-The root [`Jenkinsfile`](Jenkinsfile) defines Checkout, Build, Package and Deploy
-stages. The pipeline accepts `DEPLOY_ENV` and `TOMCAT_HOME` parameters, archives
+The root [`Jenkinsfile`](Jenkinsfile) defines Checkout, Build, Selenium Tests,
+Package and Deploy stages. The pipeline accepts `DEPLOY_ENV` and `TOMCAT_HOME`
+parameters, publishes Maven Surefire XML results, archives
 `target/parcel-tracking-portal.war`, and copies it to the selected Tomcat
 installation. For the local Windows setup, use `local-tomcat` and the Tomcat
 directory configured on the Jenkins agent, then verify:

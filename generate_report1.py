@@ -744,6 +744,47 @@ TASKS[9] = dict(
     ],
 )
 
+TASKS[10] = dict(
+    title="Continuous Testing in Jenkins",
+    branch="task/10-continuous-testing",
+    filename="task-10-continuous-testing",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Integrate the Selenium user-journey suite into Jenkins, publish Maven Surefire results, stop deployment when tests fail, correct a deliberately introduced defect and verify a successful rerun."),
+        ("h", "2. Pipeline Changes"),
+        ("table", ["Stage or setting", "Implementation"], [
+            ["Build", "mvn -B clean compile"],
+            ["Selenium Tests", "mvn -B test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal"],
+            ["Test report publisher", "junit target/surefire-reports/*.xml"],
+            ["Package", "mvn -B package -DskipTests"],
+            ["Deployment gate", "Package and Deploy stages execute only after tests pass"],
+        ]),
+        ("h", "3. Failure and Recovery"),
+        ("p", "A deliberately failing Selenium assertion is introduced on the test branch and causes the Jenkins Selenium Tests stage to fail. Jenkins publishes the Surefire result and skips Package and Deploy. The assertion is then corrected in a follow-up commit, and the pipeline is rerun successfully."),
+        ("h", "4. Verification"),
+        ("bullets", [
+            "Failed pipeline evidence shows a red Selenium Tests stage and no deployment.",
+            "Jenkins displays the published Surefire test report.",
+            "The defect correction commit restores the intended assertion.",
+            "The successful rerun completes Selenium Tests, Package and Deploy.",
+            "The deployed application remains available at http://localhost:8081/parcel-tracking-portal/.",
+        ]),
+        ("h", "5. Screenshots"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Selenium suite integrated into Jenkins",
+            "Surefire test report published",
+            "Failed tests prevent deployment",
+            "Deliberate defect and correction commit recorded",
+            "Successful pipeline rerun captured",
+            "Task 10 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "Jenkins now treats the Selenium suite as a deployment gate. Test results are published for every run, failures stop the release flow, and the corrected pipeline provides evidence of failure detection and recovery."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
