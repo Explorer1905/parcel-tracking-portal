@@ -22,6 +22,28 @@ Copy `target/parcel-tracking-portal.war` into Tomcat's `webapps` folder, start T
 
 The application skeleton also provides a health check at `/health`.
 
+## Docker
+
+Build the WAR and Docker image from the repository root:
+
+```text
+mvn -B clean package -DskipTests
+docker build -t parcel-tracking-portal:1.0.0 .
+docker run -d --name parcel-portal -p 8082:8080 parcel-tracking-portal:1.0.0
+```
+
+The container listens on port 8080 internally and is exposed on port 8082 on
+the host. Verify `http://localhost:8082/parcel-tracking-portal/health`, then
+inspect and manage its lifecycle:
+
+```text
+docker image inspect parcel-tracking-portal:1.0.0
+docker logs parcel-portal
+docker stop parcel-portal
+docker start parcel-portal
+docker rm -f parcel-portal
+```
+
 ## Jenkins pipeline deployment
 
 The root [`Jenkinsfile`](Jenkinsfile) defines Checkout, Build, Selenium Tests,

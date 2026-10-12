@@ -785,6 +785,45 @@ TASKS[10] = dict(
     ],
 )
 
+TASKS[11] = dict(
+    title="Docker Image and Container Lifecycle",
+    branch="task/11-docker",
+    filename="task-11-docker",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Create a Docker image for the Parcel Tracking Portal, run it as a container, map the application port, inspect image and runtime details, and document the complete container lifecycle."),
+        ("h", "2. Dockerfile"),
+        ("p", "The Dockerfile uses Apache Tomcat 10.1 with JDK 17, removes the default web applications, copies the Maven WAR into the application context and starts Tomcat in the foreground."),
+        ("code", "FROM tomcat:10.1-jdk17-temurin\nENV CATALINA_OPTS=\"-Dfile.encoding=UTF-8\"\nRUN rm -rf /usr/local/tomcat/webapps/*\nCOPY target/parcel-tracking-portal.war /usr/local/tomcat/webapps/parcel-tracking-portal.war\nEXPOSE 8080\nCMD [\"catalina.sh\", \"run\"]"),
+        ("h", "3. Image and Container Commands"),
+        ("code", "mvn -B clean package -DskipTests\ndocker build -t parcel-tracking-portal:1.0.0 .\ndocker images parcel-tracking-portal\ndocker run -d --name parcel-portal -p 8082:8080 parcel-tracking-portal:1.0.0\ndocker ps\ndocker logs parcel-portal\ndocker inspect parcel-portal\ndocker stop parcel-portal\ndocker start parcel-portal\ndocker rm -f parcel-portal"),
+        ("h", "4. Verification"),
+        ("table", ["Check", "Expected result"], [
+            ["Image tag", "parcel-tracking-portal:1.0.0"],
+            ["Container mapping", "Host 8082 to container 8080"],
+            ["Application URL", "http://localhost:8082/parcel-tracking-portal/"],
+            ["Health URL", "http://localhost:8082/parcel-tracking-portal/health"],
+            ["Health response", "OK"],
+            ["Lifecycle", "Run, inspect, stop, restart and remove demonstrated"],
+        ]),
+        ("h", "5. Screenshots"),
+        ("screenshots",),
+        ("h", "6. Deliverables Checklist"),
+        ("check", [
+            "Dockerfile committed",
+            "Docker image built and tagged",
+            "Container started with mapped port",
+            "Image details and container logs inspected",
+            "Container stopped and restarted",
+            "Container removed after verification",
+            "Running container and health endpoint captured",
+            "Task 11 backlog item moved to Done",
+        ]),
+        ("h", "7. Conclusion"),
+        ("p", "The Parcel Tracking Portal is packaged as a reproducible Tomcat container. The recorded commands demonstrate image creation, runtime verification and the full container lifecycle from start through removal."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
