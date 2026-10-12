@@ -22,6 +22,16 @@ Copy `target/parcel-tracking-portal.war` into Tomcat's `webapps` folder, start T
 
 The application skeleton also provides a health check at `/health`.
 
+## Jenkins pipeline deployment
+
+The root [`Jenkinsfile`](Jenkinsfile) defines Checkout, Build, Package and Deploy
+stages. The pipeline accepts `DEPLOY_ENV` and `TOMCAT_HOME` parameters, archives
+`target/parcel-tracking-portal.war`, and copies it to the selected Tomcat
+installation. For the local Windows setup, use `local-tomcat` and the Tomcat
+directory configured on the Jenkins agent, then verify:
+
+`http://localhost:8081/parcel-tracking-portal/`
+
 ## Branch strategy
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Each task uses a `task/NN-short-name` branch merged into `develop`.
