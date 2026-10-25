@@ -944,6 +944,46 @@ TASKS[14] = dict(
     ],
 )
 
+TASKS[15] = dict(
+    title="Final End-to-End Release, Documentation and Viva",
+    branch="task/15-final-release-viva",
+    filename="task-15-final-release-viva",
+    blocks=[
+        ("h", "1. Objective"),
+        ("p", "Run and document the complete Parcel Tracking Portal workflow from Git commit through Jenkins, Maven, Selenium, Docker deployment and Ansible provisioning. Prepare the final technical report, evidence and viva material."),
+        ("h", "2. Architecture and Release Flow"),
+        ("p", "A Java 17 Jakarta Servlet/JSP WAR is built with Maven, tested with Selenium in Jenkins, packaged into a versioned Docker image, published to a local registry and deployed as parcel-portal-cd. Ansible provisions the target and validates the health endpoint."),
+        ("table", ["Stage", "Evidence"], [
+            ["Source control", "Final commit, branch and merged pull request"],
+            ["Continuous integration", "Jenkins checkout, Maven build and WAR archive"],
+            ["Quality gate", "Selenium journeys and published Surefire results"],
+            ["Continuous delivery", "Versioned registry image and running container"],
+            ["Operations", "Ansible provisioning, idempotence, health check and rollback"],
+        ]),
+        ("h", "3. Demonstration Commands"),
+        ("code", "mvn -B clean package\ncurl.exe http://localhost:8082/parcel-tracking-portal/health\ncd ansible\nsudo ansible-playbook -i inventory.ini site.yml -e ansible_become=false\nsudo ansible-playbook -i inventory.ini deploy.yml -e ansible_become=false -e release_tag=1.0.7\nsudo ansible-playbook -i inventory.ini deploy.yml -e ansible_become=false -e release_tag=1.0.7\nsudo ansible-playbook -i inventory.ini rollback.yml -e ansible_become=false -e rollback_tag=1.0.7"),
+        ("h", "4. Troubleshooting, Limitations and Future Work"),
+        ("p", "The final runbook documents Jenkins Docker path issues, delayed Tomcat startup, Selenium connectivity, WSL Docker service limitations, registry tag failures and port conflicts. It also records the single-container, local-registry and non-production security limitations and proposes artifact signing, scanning, observability, replicas and production TLS."),
+        ("h", "5. Evidence"),
+        ("p", "Save final screenshots under docs/screenshots/task-15 and record the Jenkins run, Selenium gate, registry image, container health, Ansible idempotence and rollback recovery. Keep large video files outside the repository unless the submission rules permit them."),
+        ("h", "6. Screenshots"),
+        ("screenshots",),
+        ("h", "7. Viva Preparation"),
+        ("check", [
+            "Final repository and merged history shown",
+            "Jenkins end-to-end pipeline demonstrated",
+            "Selenium quality gate explained",
+            "Versioned Docker deployment verified",
+            "Ansible provisioning and idempotence explained",
+            "Rollback and health recovery demonstrated",
+            "Troubleshooting, limitations and future plan reviewed",
+            "Final presentation and viva questions prepared",
+        ]),
+        ("h", "8. Conclusion"),
+        ("p", "The project demonstrates a traceable DevOps release path with automated quality validation, versioned deployment, infrastructure configuration, health gating and recovery evidence."),
+    ],
+)
+
 # ---------- RUN ----------
 if __name__ == "__main__":
     nums = [int(a) for a in sys.argv[1:]] or sorted(TASKS)
