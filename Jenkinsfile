@@ -88,7 +88,7 @@ pipeline {
                     env.CONTAINER_NAME = params.CONTAINER_NAME?.trim()
                     env.CONTAINER_PORT = params.CONTAINER_PORT?.trim()
                     env.DOCKER_EXE = params.DOCKER_EXE?.trim()
-                    env.IMAGE_TAG = "1.0.${env.BUILD_NUMBER}"
+                    env.IMAGE_TAG = "1.1.${env.BUILD_NUMBER}"
                     if (!env.REGISTRY_HOST || !env.IMAGE_REPOSITORY || !env.CONTAINER_NAME ||
                         !env.CONTAINER_PORT || !env.DOCKER_EXE) {
                         error 'REGISTRY_HOST, IMAGE_REPOSITORY, CONTAINER_NAME, CONTAINER_PORT and DOCKER_EXE are required.'
