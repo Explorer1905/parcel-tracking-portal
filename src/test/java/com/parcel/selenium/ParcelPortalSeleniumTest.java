@@ -117,6 +117,19 @@ class ParcelPortalSeleniumTest {
         return parcelId;
     }
 
+    @Test
+    void failedParcelAppearsOnAlertsPage() {
+        String parcelId = registerParcel();
+        open("/parcel?id=" + parcelId);
+        driver.findElement(By.id("eventStatus")).sendKeys("Failed");
+        fill("eventLocation", "Nashik");
+        driver.findElement(By.id("addEventBtn")).click();
+        new WebDriverWait(driver, Duration.ofSeconds(5))
+            .until(ExpectedConditions.textToBePresentInElementLocated(
+                By.id("eventTable"), "Failed"));
+            open("/alerts");
+        assertTrue(driver.findElement(By.id("alertTable")).getText().contains(parcelId));
+    }
     private static void open(String path) {
         driver.get(BASE_URL + path);
     }
