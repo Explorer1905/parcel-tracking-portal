@@ -172,9 +172,9 @@ public class ParcelDao {
                 + "SUM(CASE WHEN latest.status = 'Failed' OR (latest.status <> 'Delivered' "
                 + "AND DATEDIFF('HOUR', latest.event_time, CURRENT_TIMESTAMP()) > 48) "
                 + "THEN 1 ELSE 0 END) AS delayed "
-                + "FROM parcels p JOIN (SELECT parcel_id, status, event_time FROM events e1 WHERE event_id = "
-                + "(SELECT MAX(e2.event_id) FROM events e2 WHERE e2.parcel_id = e1.parcel_id)) latest "
-                + "ON latest.parcel_id = p.parcel_id";
+                + "FROM parcels p JOIN events latest ON latest.event_id = "
+                + "(SELECT e2.event_id FROM events e2 WHERE e2.parcel_id = p.parcel_id "
+                + "ORDER BY e2.event_time DESC, e2.event_id DESC LIMIT 1)";
         try (Connection c = conn(); Statement s = c.createStatement();
              ResultSet rs = s.executeQuery(sql)) {
             rs.next();
