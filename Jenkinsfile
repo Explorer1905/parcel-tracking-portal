@@ -52,16 +52,31 @@ pipeline {
             }
         }
 
-        stage('Selenium Tests') {
-            steps {
-                bat 'mvn -B test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal'
-            }
-        }
-
         stage('Package') {
             steps {
                 bat 'mvn -B package -DskipTests'
                 archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                bat '''
+                    if not exist "%TOMCAT_HOME%\\webapps" (
+                        echo Tomcat webapps directory was not found: %TOMCAT_HOME%\\webapps
+                        exit /b 1
+                    )
+                    copy /Y "target\\parcel-tracking-portal.war" "%TOMCAT_HOME%\\webapps\\parcel-tracking-portal.war"
+                '''
+                sleep time: 20, unit: 'SECONDS'
+                bat 'curl.exe --fail --retry 30 --retry-delay 2 --retry-all-errors http://localhost:8081/parcel-tracking-portal/health'
+                echo "Deployed parcel-tracking-portal.war to ${params.DEPLOY_ENV} at ${params.TOMCAT_HOME}"
+            }
+        }
+
+        stage('Selenium Tests') {
+            steps {
+                bat 'mvn -B test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal'
             }
         }
 
@@ -73,7 +88,7 @@ pipeline {
                     env.CONTAINER_NAME = params.CONTAINER_NAME?.trim()
                     env.CONTAINER_PORT = params.CONTAINER_PORT?.trim()
                     env.DOCKER_EXE = params.DOCKER_EXE?.trim()
-                    env.IMAGE_TAG = "1.0.${env.BUILD_NUMBER}"
+                    env.IMAGE_TAG = "1.1.${env.BUILD_NUMBER}"
                     if (!env.REGISTRY_HOST || !env.IMAGE_REPOSITORY || !env.CONTAINER_NAME ||
                         !env.CONTAINER_PORT || !env.DOCKER_EXE) {
                         error 'REGISTRY_HOST, IMAGE_REPOSITORY, CONTAINER_NAME, CONTAINER_PORT and DOCKER_EXE are required.'
@@ -115,23 +130,11 @@ pipeline {
                 '''
             }
         }
-
-        stage('Deploy to Tomcat') {
-            steps {
-                bat '''
-                    if not exist "%TOMCAT_HOME%\\webapps" (
-                        echo Tomcat webapps directory was not found: %TOMCAT_HOME%\\webapps
-                        exit /b 1
-                    )
-                    copy /Y "target\\parcel-tracking-portal.war" "%TOMCAT_HOME%\\webapps\\parcel-tracking-portal.war"
-                '''
-                echo "Deployed parcel-tracking-portal.war to ${params.DEPLOY_ENV} at ${params.TOMCAT_HOME}"
-            }
-        }
     }
 
     post {
         always {
+            archiveArtifacts artifacts: 'target/selenium-failures/*.png', allowEmptyArchive: true
             junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
         }
         success {
