@@ -29,3 +29,5 @@ target/
 *.iml
 .vscode/
 __pycache__/
+
+.env

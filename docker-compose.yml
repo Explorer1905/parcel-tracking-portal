@@ -1,0 +1,49 @@
+# Parcel Tracking Portal: application + PostgreSQL database.
+#
+#   copy .env.example .env        (Windows)   |   cp .env.example .env   (Linux)
+#   docker compose up -d --build
+#
+# Data lives in the named volume "parcel_pgdata", so it survives
+# "docker compose down" and container re-creation. "docker compose down -v" deletes it.
+name: parcel-tracking-portal
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: parcel-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-parcels}
+      POSTGRES_USER: ${POSTGRES_USER:-parcel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parcel_pass}
+      TZ: ${APP_TIMEZONE:-Asia/Kolkata}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - parcel_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    image: ${APP_IMAGE:-parcel-tracking-portal:latest}
+    build: .
+    container_name: parcel-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-parcels}
+      DB_USER: ${POSTGRES_USER:-parcel}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-parcel_pass}
+      DB_SEED_DEMO: ${DB_SEED_DEMO:-false}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Kolkata}
+      TZ: ${APP_TIMEZONE:-Asia/Kolkata}
+    ports:
+      - "${APP_PORT:-8090}:8080"
+
+volumes:
+  parcel_pgdata:
