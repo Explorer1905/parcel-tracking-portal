@@ -21,6 +21,7 @@ pipeline {
 
     environment {
         DOCKER_EXE       = "${params.DOCKER_EXE}"
+        COMPOSE_EXE      = 'C:\\Users\\Shravani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\cli-plugins\\docker-compose.exe'
         REGISTRY_HOST    = "${params.REGISTRY_HOST}"
         IMAGE_REPOSITORY = "${params.IMAGE_REPOSITORY}"
         IMAGE_TAG        = "1.1.${env.BUILD_NUMBER}"
@@ -48,7 +49,7 @@ pipeline {
                         error "Parameters are out of date (DEPLOY_ENV='${params.DEPLOY_ENV}'). Normal on the first run after the Jenkinsfile changed: run Build with Parameters again."
                     }
                 }
-                bat '"%DOCKER_EXE%" compose version'
+                bat '"%COMPOSE_EXE%" version'
             }
         }
 
@@ -84,9 +85,9 @@ pipeline {
                     set "DB_SEED_DEMO=false"
                     set "DB_CONTAINER=%TEST_PROJECT%-db"
                     set "APP_CONTAINER=%TEST_PROJECT%-app"
-                    "%DOCKER_EXE%" compose -p %TEST_PROJECT% down -v --remove-orphans
-                    "%DOCKER_EXE%" compose -p %TEST_PROJECT% up -d --no-build || exit /b 1
-                    "%DOCKER_EXE%" compose -p %TEST_PROJECT% ps
+                    "%COMPOSE_EXE%" -p %TEST_PROJECT% down -v --remove-orphans
+                    "%COMPOSE_EXE%" -p %TEST_PROJECT% up -d --no-build || exit /b 1
+                    "%COMPOSE_EXE%" -p %TEST_PROJECT% ps
                     curl.exe --fail --retry 40 --retry-delay 3 --retry-all-errors http://localhost:%TEST_APP_PORT%/parcel-tracking-portal/health
                 '''
             }
@@ -125,8 +126,8 @@ pipeline {
                     set "DB_SEED_DEMO=%SEED_DEMO%"
                     set "DB_CONTAINER=%STACK_NAME%-db"
                     set "APP_CONTAINER=%STACK_NAME%-app"
-                    "%DOCKER_EXE%" compose -p %STACK_NAME% up -d --no-build || exit /b 1
-                    "%DOCKER_EXE%" compose -p %STACK_NAME% ps
+                    "%COMPOSE_EXE%" -p %STACK_NAME% up -d --no-build || exit /b 1
+                    "%COMPOSE_EXE%" -p %STACK_NAME% ps
                     curl.exe --fail --retry 40 --retry-delay 3 --retry-all-errors http://localhost:%PROD_APP_PORT%/parcel-tracking-portal/health
                 '''
             }
@@ -135,7 +136,7 @@ pipeline {
 
     post {
         always {
-            bat '"%DOCKER_EXE%" compose -p %TEST_PROJECT% down -v --remove-orphans & exit /b 0'
+            bat '"%COMPOSE_EXE%" -p %TEST_PROJECT% down -v --remove-orphans & exit /b 0'
             archiveArtifacts artifacts: 'target/selenium-failures/*.png', allowEmptyArchive: true
             junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
         }
