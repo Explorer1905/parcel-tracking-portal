@@ -27,6 +27,11 @@ public class ParcelService {
             throw new IllegalArgumentException(
                     "Parcel ID must be 3 to 30 characters: letters, digits or hyphen.");
         }
+        if (sender.length() > 100 || receiver.length() > 100
+                || origin.length() > 100 || destination.length() > 100) {
+            throw new IllegalArgumentException(
+                    "Sender, receiver, origin and destination must be at most 100 characters.");
+        }
         if (dao.exists(id)) {
             throw new IllegalArgumentException("Parcel ID " + id + " already exists.");
         }
@@ -72,6 +77,12 @@ public class ParcelService {
         remarks = clean(remarks);
         if (id.isEmpty() || status.isEmpty()) {
             throw new IllegalArgumentException("Parcel and status are required.");
+        }
+        if (location.length() > 100) {
+            throw new IllegalArgumentException("Location must be at most 100 characters.");
+        }
+        if (remarks.length() > 200) {
+            throw new IllegalArgumentException("Remarks must be at most 200 characters.");
         }
         if (find(id) == null) {
             throw new IllegalArgumentException("Parcel " + id + " was not found.");
