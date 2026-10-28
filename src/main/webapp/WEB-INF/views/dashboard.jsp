@@ -9,48 +9,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8"><title>Parcel Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 30px; color: #20252b; }
-    .cards { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
-    .card { border: 1px solid #b7c4d4; border-radius: 6px; padding: 12px 18px; min-width: 110px; background: #eef4fb; }
-    .number { display: block; font-size: 24px; font-weight: bold; }
-    form { margin: 12px 0; } input, select { padding: 6px; margin: 3px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-    th, td { border: 1px solid #999; padding: 7px; text-align: left; }
-    th { background: #e8eef7; } .error { color: #b00020; font-weight: bold; }
-    .alert { background: #fff1f0; border: 1px solid #d33; padding: 10px; }
-  </style>
+  <meta charset="UTF-8">
+  <title>Parcel Dashboard</title>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/styles.css">
 </head>
 <body>
-  <h1>Parcel Tracking Dashboard</h1>
-  <p><a href="index.jsp">Home</a> | <a href="parcels">Add parcel</a></p>
-  <div class="cards">
-    <div class="card">Total<span id="sumTotal" class="number"><%= summary.total() %></span></div>
-    <div class="card">In transit<span id="sumTransit" class="number"><%= summary.inTransit() %></span></div>
-    <div class="card">Delivered<span id="sumDelivered" class="number"><%= summary.delivered() %></span></div>
-    <div class="card">Delayed<span id="sumDelayed" class="number"><%= summary.delayed() %></span></div>
+  <div class="page stack">
+    <div class="panel">
+      <h1>Parcel Tracking Dashboard</h1>
+      <p class="subtitle">Track operational status and drill into parcel movement events.</p>
+      <div class="top-nav">
+        <a href="index.jsp">Home</a>
+        <a href="parcels">Add parcel</a>
+        <a href="alerts">Alerts</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="cards">
+        <div class="card"><span class="card-label">Total</span><span id="sumTotal" class="number"><%= summary.total() %></span></div>
+        <div class="card"><span class="card-label">In transit</span><span id="sumTransit" class="number"><%= summary.inTransit() %></span></div>
+        <div class="card"><span class="card-label">Delivered</span><span id="sumDelivered" class="number"><%= summary.delivered() %></span></div>
+        <div class="card"><span class="card-label">Delayed</span><span id="sumDelayed" class="number"><%= summary.delayed() %></span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <% if (error != null) { %><p class="error"><%= Html.esc(error) %></p><% } %>
+      <form method="get" action="dashboard" class="form-grid">
+        <div class="field">
+          <label for="searchBox">Search</label>
+          <input id="searchBox" name="q" value="<%= Html.esc((String) request.getAttribute("query")) %>"
+                 placeholder="ID, sender, receiver or location">
+        </div>
+        <div class="field">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter" name="status">
+            <option value="">All statuses</option>
+            <option>Picked Up</option>
+            <option>In Transit</option>
+            <option>Out for Delivery</option>
+            <option>Delivered</option>
+            <option>Failed</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="searchBtn" type="submit">Search</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2 class="section-title">Search results (<%= parcels.size() %>)</h2>
+      <table id="parcelTable">
+        <tr><th>Parcel</th><th>Route</th><th>Status</th><th>Drill-down</th></tr>
+        <% for (Parcel p : parcels) { %>
+        <tr>
+          <td><%= Html.esc(p.id()) %></td>
+          <td><%= Html.esc(p.origin()) %> to <%= Html.esc(p.destination()) %></td>
+          <td><%= Html.esc(p.status()) %></td>
+          <td><a class="link-btn" href="parcel?id=<%= Html.esc(p.id()) %>">View events</a></td>
+        </tr>
+        <% } %>
+      </table>
+    </div>
   </div>
-  <% if (error != null) { %><p class="error"><%= Html.esc(error) %></p><% } %>
-  <form method="get" action="dashboard">
-    <label for="searchBox">Search</label>
-    <input id="searchBox" name="q" value="<%= Html.esc((String) request.getAttribute("query")) %>"
-           placeholder="ID, sender, receiver or location">
-    <select id="statusFilter" name="status"><option value="">All statuses</option><option>Picked Up</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Failed</option></select>
-    <button id="searchBtn" type="submit">Search</button>
-  </form>
-  <h2>Search results (<%= parcels.size() %>)</h2>
-  <table id="parcelTable">
-    <tr><th>Parcel</th><th>Route</th><th>Status</th><th>Drill-down</th></tr>
-    <% for (Parcel p : parcels) { %>
-    <tr>
-      <td><%= Html.esc(p.id()) %></td>
-      <td><%= Html.esc(p.origin()) %> to <%= Html.esc(p.destination()) %></td>
-      <td><%= Html.esc(p.status()) %></td>
-      <td><a href="parcel?id=<%= Html.esc(p.id()) %>">View events</a></td>
-    </tr>
-    <% } %>
-  </table>
-  <p><a href="alerts">View alerts and exceptions</a></p>
 </body>
 </html>
