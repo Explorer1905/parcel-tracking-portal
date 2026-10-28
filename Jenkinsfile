@@ -1,48 +1,54 @@
 pipeline {
     agent any
 
+    options {
+        disableConcurrentBuilds()
+    }
+
     parameters {
-        choice(
-            name: 'DEPLOY_ENV',
-            choices: ['local-tomcat', 'staging-tomcat'],
-            description: 'Deployment environment for the WAR artifact'
-        )
-        string(
-            name: 'TOMCAT_HOME',
-            defaultValue: 'C:\\Users\\Shravani\\Downloads\\apache-tomcat-10.1.60-windows-x86\\apache-tomcat-10.1.60',
-            description: 'Tomcat installation directory on the Jenkins agent'
-        )
-        string(
-            name: 'REGISTRY_HOST',
-            defaultValue: 'localhost:5000',
-            description: 'Local Docker registry host and port'
-        )
-        string(
-            name: 'IMAGE_REPOSITORY',
-            defaultValue: 'parcel-tracking-portal',
-            description: 'Repository name in the Docker registry'
-        )
-        string(
-            name: 'CONTAINER_NAME',
-            defaultValue: 'parcel-portal-cd',
-            description: 'Container name for the fresh deployment'
-        )
-        string(
-            name: 'CONTAINER_PORT',
-            defaultValue: '8082',
-            description: 'Host port mapped to Tomcat port 8080'
-        )
-        string(
-            name: 'DOCKER_EXE',
-            defaultValue: 'C:\\Users\\Shravani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe',
-            description: 'Docker CLI executable on the Jenkins agent'
-        )
+        choice(name: 'DEPLOY_ENV', choices: ['production', 'staging'],
+               description: 'Stack to deploy: production = port 8082, staging = port 8083')
+        booleanParam(name: 'SEED_DEMO_DATA', defaultValue: true,
+               description: 'Load the DEMO-xxxx parcels into the deployed database')
+        string(name: 'REGISTRY_HOST', defaultValue: 'localhost:5000',
+               description: 'Local Docker registry host and port')
+        string(name: 'IMAGE_REPOSITORY', defaultValue: 'parcel-tracking-portal',
+               description: 'Repository name in the Docker registry')
+        string(name: 'DOCKER_EXE',
+               defaultValue: 'C:\\Users\\Shravani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe',
+               description: 'Docker CLI executable on the Jenkins agent')
+    }
+
+    environment {
+        DOCKER_EXE       = "${params.DOCKER_EXE}"
+        REGISTRY_HOST    = "${params.REGISTRY_HOST}"
+        IMAGE_REPOSITORY = "${params.IMAGE_REPOSITORY}"
+        IMAGE_TAG        = "1.1.${env.BUILD_NUMBER}"
+        IMAGE_REF        = "${params.REGISTRY_HOST}/${params.IMAGE_REPOSITORY}:1.1.${env.BUILD_NUMBER}"
+        STACK_NAME       = "parcel-${params.DEPLOY_ENV}"
+        PROD_APP_PORT    = "${params.DEPLOY_ENV == 'production' ? '8082' : '8083'}"
+        PROD_DB_PORT     = "${params.DEPLOY_ENV == 'production' ? '5434' : '5435'}"
+        SEED_DEMO        = "${params.SEED_DEMO_DATA}"
+        TEST_PROJECT     = 'parcel-test'
+        TEST_APP_PORT    = '8091'
+        TEST_DB_PORT     = '5433'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (!(params.DEPLOY_ENV in ['production', 'staging']) || params.SEED_DEMO_DATA == null) {
+                        error "Parameters are out of date (DEPLOY_ENV='${params.DEPLOY_ENV}'). Normal on the first run after the Jenkinsfile changed: run Build with Parameters again."
+                    }
+                }
+                bat '"%DOCKER_EXE%" compose version'
             }
         }
 
@@ -59,46 +65,36 @@ pipeline {
             }
         }
 
-        stage('Deploy to Tomcat') {
+        stage('Build Docker Image') {
             steps {
                 bat '''
-                    if not exist "%TOMCAT_HOME%\\webapps" (
-                        echo Tomcat webapps directory was not found: %TOMCAT_HOME%\\webapps
-                        exit /b 1
-                    )
-                    copy /Y "target\\parcel-tracking-portal.war" "%TOMCAT_HOME%\\webapps\\parcel-tracking-portal.war"
+                    "%DOCKER_EXE%" build -t "%IMAGE_REF%" . || exit /b 1
+                    "%DOCKER_EXE%" tag "%IMAGE_REF%" "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:latest" || exit /b 1
+                    "%DOCKER_EXE%" image inspect "%IMAGE_REF%" --format "image={{.Id}} size={{.Size}}"
                 '''
-                sleep time: 20, unit: 'SECONDS'
-                bat 'curl.exe --fail --retry 30 --retry-delay 2 --retry-all-errors http://localhost:8081/parcel-tracking-portal/health'
-                echo "Deployed parcel-tracking-portal.war to ${params.DEPLOY_ENV} at ${params.TOMCAT_HOME}"
+            }
+        }
+
+        stage('Deploy Test Stack') {
+            steps {
+                bat '''
+                    set "APP_IMAGE=%IMAGE_REF%"
+                    set "APP_PORT=%TEST_APP_PORT%"
+                    set "DB_PORT=%TEST_DB_PORT%"
+                    set "DB_SEED_DEMO=false"
+                    set "DB_CONTAINER=%TEST_PROJECT%-db"
+                    set "APP_CONTAINER=%TEST_PROJECT%-app"
+                    "%DOCKER_EXE%" compose -p %TEST_PROJECT% down -v --remove-orphans
+                    "%DOCKER_EXE%" compose -p %TEST_PROJECT% up -d --no-build || exit /b 1
+                    "%DOCKER_EXE%" compose -p %TEST_PROJECT% ps
+                    curl.exe --fail --retry 40 --retry-delay 3 --retry-all-errors http://localhost:%TEST_APP_PORT%/parcel-tracking-portal/health
+                '''
             }
         }
 
         stage('Selenium Tests') {
             steps {
-                bat 'mvn -B test -Dselenium.baseUrl=http://localhost:8081/parcel-tracking-portal'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    env.REGISTRY_HOST = params.REGISTRY_HOST?.trim()
-                    env.IMAGE_REPOSITORY = params.IMAGE_REPOSITORY?.trim()
-                    env.CONTAINER_NAME = params.CONTAINER_NAME?.trim()
-                    env.CONTAINER_PORT = params.CONTAINER_PORT?.trim()
-                    env.DOCKER_EXE = params.DOCKER_EXE?.trim()
-                    env.IMAGE_TAG = "1.1.${env.BUILD_NUMBER}"
-                    if (!env.REGISTRY_HOST || !env.IMAGE_REPOSITORY || !env.CONTAINER_NAME ||
-                        !env.CONTAINER_PORT || !env.DOCKER_EXE) {
-                        error 'REGISTRY_HOST, IMAGE_REPOSITORY, CONTAINER_NAME, CONTAINER_PORT and DOCKER_EXE are required.'
-                    }
-                }
-                bat '''
-                    "%DOCKER_EXE%" build -t "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%" .
-                    "%DOCKER_EXE%" tag "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%" "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:latest"
-                    "%DOCKER_EXE%" image inspect "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%"
-                '''
+                bat 'mvn -B test -Dselenium.baseUrl=http://localhost:%TEST_APP_PORT%/parcel-tracking-portal'
             }
         }
 
@@ -111,22 +107,27 @@ pipeline {
                     ) else (
                         "%DOCKER_EXE%" start parcel-registry >nul 2>&1
                     )
-                    "%DOCKER_EXE%" push "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%"
-                    "%DOCKER_EXE%" push "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:latest"
+                    "%DOCKER_EXE%" push "%IMAGE_REF%" || exit /b 1
+                    "%DOCKER_EXE%" push "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:latest" || exit /b 1
                     curl.exe --fail http://%REGISTRY_HOST%/v2/%IMAGE_REPOSITORY%/tags/list
                 '''
             }
         }
 
-        stage('Deploy Fresh Container') {
+        stage('Deploy Stack') {
             steps {
                 bat '''
-                    "%DOCKER_EXE%" rm -f "%CONTAINER_NAME%" >nul 2>&1
-                    "%DOCKER_EXE%" pull "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%"
-                    "%DOCKER_EXE%" run -d --name "%CONTAINER_NAME%" -p "%CONTAINER_PORT%:8080" "%REGISTRY_HOST%/%IMAGE_REPOSITORY%:%IMAGE_TAG%"
-                    "%DOCKER_EXE%" ps --filter "name=%CONTAINER_NAME%"
-                    "%DOCKER_EXE%" logs "%CONTAINER_NAME%"
-                    curl.exe --fail --retry 30 --retry-delay 2 --retry-all-errors http://localhost:%CONTAINER_PORT%/parcel-tracking-portal/health
+                    "%DOCKER_EXE%" rm -f parcel-portal-cd >nul 2>&1
+                    "%DOCKER_EXE%" pull "%IMAGE_REF%" || exit /b 1
+                    set "APP_IMAGE=%IMAGE_REF%"
+                    set "APP_PORT=%PROD_APP_PORT%"
+                    set "DB_PORT=%PROD_DB_PORT%"
+                    set "DB_SEED_DEMO=%SEED_DEMO%"
+                    set "DB_CONTAINER=%STACK_NAME%-db"
+                    set "APP_CONTAINER=%STACK_NAME%-app"
+                    "%DOCKER_EXE%" compose -p %STACK_NAME% up -d --no-build || exit /b 1
+                    "%DOCKER_EXE%" compose -p %STACK_NAME% ps
+                    curl.exe --fail --retry 40 --retry-delay 3 --retry-all-errors http://localhost:%PROD_APP_PORT%/parcel-tracking-portal/health
                 '''
             }
         }
@@ -134,14 +135,15 @@ pipeline {
 
     post {
         always {
+            bat '"%DOCKER_EXE%" compose -p %TEST_PROJECT% down -v --remove-orphans & exit /b 0'
             archiveArtifacts artifacts: 'target/selenium-failures/*.png', allowEmptyArchive: true
-            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
+            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
         }
         success {
-            echo 'Pipeline completed: tests, Docker build, registry publish and fresh container deployment succeeded.'
+            echo "Pipeline completed: test stack passed Selenium, image ${env.IMAGE_TAG} published, ${env.STACK_NAME} stack deployed."
         }
         failure {
-            echo 'Pipeline failed. Review the stage log before redeploying.'
+            echo 'Pipeline failed. Nothing was published or deployed after the failing stage.'
         }
     }
 }
