@@ -1,0 +1,44 @@
+---
+# roles/packages/tasks/main.yml
+# Install Docker prerequisites and utility packages.
+# Idempotent: uses package state=present; won't reinstall if already present.
+
+- name: Update apt cache (max once per hour)
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Install prerequisite packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - python3-docker
+    state: present
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Check if Docker CLI is available
+  ansible.builtin.command: docker --version
+  register: docker_check
+  changed_when: false
+  failed_when: false
+
+- name: Show Docker version
+  ansible.builtin.debug:
+    msg: "Docker: {{ docker_check.stdout | default('not found – using Docker Desktop via WSL integration') }}"
+
+- name: Check if Docker Compose plugin is available
+  ansible.builtin.command: docker compose version
+  register: compose_check
+  changed_when: false
+  failed_when: false
+
+- name: Show Docker Compose version
+  ansible.builtin.debug:
+    msg: "Docker Compose: {{ compose_check.stdout | default('not found') }}"

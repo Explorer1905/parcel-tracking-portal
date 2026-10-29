@@ -1,0 +1,22 @@
+---
+# roles/service-user/tasks/main.yml
+# Creates the dedicated system user and group for the Parcel portal.
+# Idempotent: group/user creation is a no-op if they already exist.
+
+- name: Create parcel system group
+  ansible.builtin.group:
+    name: "{{ app_group }}"
+    system: true
+    state: present
+  become: true
+
+- name: Create parcel system user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+    comment: "Parcel Tracking Portal service account"
+    state: present
+  become: true

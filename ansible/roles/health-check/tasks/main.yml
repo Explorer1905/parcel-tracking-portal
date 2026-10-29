@@ -1,0 +1,18 @@
+---
+# roles/health-check/tasks/main.yml
+# Polls the /health endpoint until it returns 200 OK or retries are exhausted.
+# This is the deployment gate: the play fails if the app does not start.
+
+- name: Wait for application to be healthy
+  ansible.builtin.uri:
+    url: "{{ health_url }}"
+    return_content: true
+    status_code: 200
+  register: health_result
+  until: health_result.status == 200 and health_result.content | trim == 'OK'
+  retries: "{{ health_retries }}"
+  delay: "{{ health_delay }}"
+
+- name: Health check passed
+  ansible.builtin.debug:
+    msg: "Health check OK – {{ health_url }} returned: {{ health_result.content | trim }}"

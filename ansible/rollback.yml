@@ -1,47 +1,66 @@
 ---
-- name: Roll back the Parcel Tracking Portal to a stable release
-  hosts: parcel_nodes
-  become: true
-  gather_facts: false
+# rollback.yml – Roll back to a previously published image tag.
+#
+# Usage:
+#   ansible-playbook -i inventory.ini rollback.yml \
+#     -e rollback_tag=1.0.5 \
+#     -e postgres_password=secret
+#
+# rollback_tag MUST differ from the currently running release.
+# Tags 1.0.5 and 1.0.7 were published before the PostgreSQL migration;
+# they are kept in the registry specifically for this rollback demo.
+# The database (PostgreSQL volume) is left UNTOUCHED.
 
-  vars:
-    docker_executable: /usr/bin/docker
-    container_name: parcel-portal-cd
-    image_repository: localhost:5000/parcel-tracking-portal
-    rollback_tag: "1.0.7"
-    host_port: 8082
-    health_url: "http://127.0.0.1:{{ host_port }}/parcel-tracking-portal/health"
+- name: Roll back Parcel Tracking Portal
+  hosts: parcel_servers
+  become: false
+  gather_facts: true
 
-  tasks:
-    - name: Pull the stable rollback release
-      ansible.builtin.command:
-        cmd: "{{ docker_executable }} pull {{ image_repository }}:{{ rollback_tag }}"
-      changed_when: false
+  pre_tasks:
+    - name: Validate rollback_tag is provided
+      ansible.builtin.fail:
+        msg: "rollback_tag is required. Use: -e rollback_tag=1.0.5"
+      when: rollback_tag is not defined or rollback_tag | length == 0
 
-    - name: Replace the failed container with the stable release
-      ansible.builtin.shell:
-        cmd: >-
-          {{ docker_executable }} rm -f {{ container_name }} >/dev/null 2>&1 || true;
-          {{ docker_executable }} run -d --name {{ container_name }}
-          -p {{ host_port }}:8080 {{ image_repository }}:{{ rollback_tag }}
-      changed_when: true
+    - name: Validate postgres_password is provided
+      ansible.builtin.fail:
+        msg: "postgres_password is required."
+      when: postgres_password is not defined or postgres_password | length == 0
 
-    - name: Verify the rollback health endpoint
-      ansible.builtin.uri:
-        url: "{{ health_url }}"
-        status_code: 200
-        return_content: true
-      register: rollback_health
-      until:
-        - rollback_health.status == 200
-        - rollback_health.content | trim == "OK"
-      retries: 30
-      delay: 2
+    - name: Read current active release tag
+      ansible.builtin.slurp:
+        src: "{{ app_base }}/active_release"
+      register: current_release_file
+      failed_when: false
 
-    - name: Record rolled-back release
-      ansible.builtin.copy:
-        dest: /etc/parcel-tracking-portal/active-release
-        content: "{{ image_repository }}:{{ rollback_tag }}\n"
-        owner: parcel
-        group: parcel
-        mode: "0640"
+    - name: Set current_release fact
+      ansible.builtin.set_fact:
+        current_release: "{{ current_release_file.content | default('unknown') | b64decode | trim }}"
+
+    - name: Assert rollback tag differs from running release
+      ansible.builtin.fail:
+        msg: >
+          rollback_tag '{{ rollback_tag }}' is the same as the currently running
+          release '{{ current_release }}'. Choose a DIFFERENT previously published tag.
+      when: rollback_tag == current_release
+
+    - name: Show rollback plan
+      ansible.builtin.debug:
+        msg: "Rolling back from {{ current_release }} to {{ rollback_tag }}"
+
+  roles:
+    - role: app-config
+      vars:
+        release_tag: "{{ rollback_tag }}"
+    - role: deploy
+      vars:
+        release_tag: "{{ rollback_tag }}"
+    - health-check
+
+  post_tasks:
+    - name: Rollback complete
+      ansible.builtin.debug:
+        msg: >
+          Rollback successful. Running tag: {{ rollback_tag }}.
+          Previous tag was: {{ current_release }}.
+          Database volume was NOT modified.

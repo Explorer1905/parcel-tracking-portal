@@ -1,0 +1,62 @@
+---
+# restore.yml – Restore a database backup created by backup.yml.
+#
+# Usage:
+#   ansible-playbook -i inventory.ini restore.yml \
+#     -e backup_file=/var/backups/parcel-tracking-portal/parcels_20261029_143000.sql.gz
+#
+# WARNING: This drops and recreates all tables. Run backup.yml first.
+
+- name: Restore Parcel Tracking Portal database
+  hosts: parcel_servers
+  become: false
+  gather_facts: false
+
+  vars:
+    db_container: "{{ compose_project }}-db"
+
+  pre_tasks:
+    - name: Validate backup_file is provided
+      ansible.builtin.fail:
+        msg: "backup_file is required. Use: -e backup_file=/var/backups/parcel-tracking-portal/parcels_<timestamp>.sql.gz"
+      when: backup_file is not defined or backup_file | length == 0
+
+    - name: Check backup file exists
+      ansible.builtin.stat:
+        path: "{{ backup_file }}"
+      register: backup_stat
+
+    - name: Fail if backup file not found
+      ansible.builtin.fail:
+        msg: "Backup file not found: {{ backup_file }}"
+      when: not backup_stat.stat.exists
+
+    - name: Confirm restore (show what will happen)
+      ansible.builtin.debug:
+        msg: >
+          RESTORING backup {{ backup_file }} into container {{ db_container }}.
+          All current data in the 'parcels' database will be REPLACED.
+
+  tasks:
+    - name: Restore database from backup
+      ansible.builtin.shell: >
+        zcat {{ backup_file }}
+        | docker exec -i {{ db_container }}
+          psql -U parcel -d parcels
+          --set ON_ERROR_STOP=on
+      register: restore_result
+      changed_when: restore_result.rc == 0
+
+    - name: Show restore result
+      ansible.builtin.debug:
+        msg: "Restore completed successfully from {{ backup_file }}"
+
+    - name: Verify database is accessible after restore
+      ansible.builtin.uri:
+        url: "{{ health_url }}"
+        return_content: true
+        status_code: 200
+      register: health_result
+      until: health_result.status == 200
+      retries: 10
+      delay: 3

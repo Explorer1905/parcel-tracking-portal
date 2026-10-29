@@ -1,0 +1,42 @@
+---
+# roles/firewall/tasks/main.yml
+# Opens the required TCP ports using ufw (Ubuntu) or firewalld (RHEL).
+# Idempotent: ufw/firewalld rules are no-ops when the rule already exists.
+
+- name: Allow application port {{ app_port }} (ufw)
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_port }}"
+    proto: tcp
+  become: true
+  when: ansible_os_family == "Debian"
+  ignore_errors: true   # ufw may not be active in WSL
+
+- name: Allow registry port 5000 (ufw)
+  community.general.ufw:
+    rule: allow
+    port: "5000"
+    proto: tcp
+  become: true
+  when: ansible_os_family == "Debian"
+  ignore_errors: true
+
+- name: Allow database port {{ db_port }} (ufw)
+  community.general.ufw:
+    rule: allow
+    port: "{{ db_port }}"
+    proto: tcp
+  become: true
+  when: ansible_os_family == "Debian"
+  ignore_errors: true
+
+- name: Show ufw status
+  ansible.builtin.command: ufw status
+  register: ufw_status
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: Display ufw status
+  ansible.builtin.debug:
+    msg: "{{ ufw_status.stdout_lines | default(['ufw not active or not installed']) }}"

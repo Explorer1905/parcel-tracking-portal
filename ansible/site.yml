@@ -1,98 +1,25 @@
 ---
-- name: Configure Parcel Tracking Portal node
-  hosts: parcel_nodes
-  become: true
+# site.yml – Master playbook: provisions infrastructure then deploys the portal.
+# Run: ansible-playbook -i inventory.ini site.yml
+# Second run must report changed=0 (idempotent).
+
+- name: Provision Parcel Tracking Portal infrastructure
+  hosts: parcel_servers
+  become: false   # WSL demo runs as current user; set true for a real remote host
   gather_facts: true
 
-  vars:
-    app_name: parcel-tracking-portal
-    app_user: parcel
-    app_group: parcel
-    app_root: /opt/parcel-tracking-portal
-    config_root: /etc/parcel-tracking-portal
-    data_root: /var/lib/parcel-tracking-portal
-    app_port: 8082
-    registry_port: 5000
-    tomcat_port: 8080
-    required_packages:
-      - ca-certificates
-      - curl
-      - docker.io
-      - maven
-      - openjdk-17-jre-headless
-      - ufw
+  roles:
+    - packages
+    - service-user
+    - app-dirs
+    - app-config
+    - firewall
 
-  tasks:
-    - name: Install server prerequisite packages
-      ansible.builtin.apt:
-        name: "{{ required_packages }}"
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
+- name: Deploy Parcel Tracking Portal
+  hosts: parcel_servers
+  become: false
+  gather_facts: false
 
-    - name: Create application group
-      ansible.builtin.group:
-        name: "{{ app_group }}"
-        system: true
-        state: present
-
-    - name: Create application service user
-      ansible.builtin.user:
-        name: "{{ app_user }}"
-        group: "{{ app_group }}"
-        system: true
-        create_home: false
-        shell: /usr/sbin/nologin
-        state: present
-
-    - name: Create application directories
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: directory
-        owner: "{{ app_user }}"
-        group: "{{ app_group }}"
-        mode: "{{ item.mode }}"
-      loop:
-        - { path: "{{ app_root }}", mode: "0755" }
-        - { path: "{{ config_root }}", mode: "0750" }
-        - { path: "{{ data_root }}", mode: "0750" }
-
-    - name: Install managed application configuration
-      ansible.builtin.copy:
-        dest: "{{ config_root }}/application.properties"
-        owner: "{{ app_user }}"
-        group: "{{ app_group }}"
-        mode: "0640"
-        content: |
-          application.name={{ app_name }}
-          application.port={{ app_port }}
-          docker.registry.port={{ registry_port }}
-          tomcat.port={{ tomcat_port }}
-
-    - name: Discover available services
-      ansible.builtin.service_facts:
-
-    - name: Enable and start Docker
-      ansible.builtin.service:
-        name: docker
-        enabled: true
-        state: started
-      when:
-        - "'docker.service' in ansible_facts.services"
-        - ansible_facts.services['docker.service'].status != 'not-found'
-
-    - name: Report Docker service limitation on WSL or Docker Desktop
-      ansible.builtin.debug:
-        msg: "Docker package configured; no docker system service is available on this target. Use Docker Desktop/WSL integration or enable systemd."
-      when:
-        - "'docker.service' not in ansible_facts.services or ansible_facts.services['docker.service'].status == 'not-found'"
-
-    - name: Allow application and registry ports through UFW
-      ansible.builtin.command:
-        cmd: "ufw allow {{ item }}/tcp"
-      changed_when: false
-      loop:
-        - "{{ app_port }}"
-        - "{{ registry_port }}"
-        - "{{ tomcat_port }}"
-      when: ansible_facts.os_family == "Debian"
+  roles:
+    - deploy
+    - health-check

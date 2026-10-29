@@ -35,8 +35,8 @@
 | 15 Final end-to-end run + docs | ⚠️ Needs update for PostgreSQL | task/15-final-release-viva |
 
 **Phase A1 (richer parcel record)** — ✅ COMPLETE — awaiting user PR review  
-**Phase A2 (public API + /track + CSV export)** — 🔲 Not started  
-**Phase C (Ansible rewrite for PostgreSQL)** — 🔲 Not started  
+**Phase A2 (public API + /track + CSV export)** — ✅ COMPLETE — awaiting user PR review  
+**Phase C (Ansible rewrite for PostgreSQL)** — ✅ COMPLETE — awaiting user PR review  
 **Phase D (docs, reports, README, VIVA_QA)** — 🔲 Not started  
 **Phase A3 (dashboard charts + pagination)** — 🔲 Not started  
 **Phase B (auth/roles)** — 🔲 LAST / OPTIONAL  
@@ -92,16 +92,38 @@
 
 ---
 
-## Next Phase (A2) – Starting Next
+## Phase C — Ansible Rewrite (PostgreSQL Architecture)
 
-**Branch:** `feature/public-api` (off `feature/parcel-details`)  
-**What:** Public `/track` page, REST API (`/api/parcels`, `/api/summary`), CSV export  
-**Command to resume:**
-```powershell
-cd C:\Users\Shravani\Desktop\Shravani\Devops_Project\parcel-tracking-portal
-git checkout feature/parcel-details
-git checkout -b feature/public-api
+**Branch:** `ops/ansible-postgres` (off `feature/public-api`)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `ansible/inventory.ini` | Rewritten for PostgreSQL+Compose architecture |
+| `ansible/site.yml` | Master playbook: provisions then deploys |
+| `ansible/deploy.yml` | Deploy specific release_tag; validates args, health-checks |
+| `ansible/rollback.yml` | Rolls back to rollback_tag; asserts it differs from current |
+| `ansible/backup.yml` | pg_dump via docker exec, timestamped, 7-day retention |
+| `ansible/restore.yml` | psql restore into db container, health-check after |
+| `ansible/roles/packages/tasks/main.yml` | Docker prereqs, curl, python3-docker |
+| `ansible/roles/service-user/tasks/main.yml` | Creates parcel system user/group |
+| `ansible/roles/app-dirs/tasks/main.yml` | 4 directories + docker-compose.yml copy |
+| `ansible/roles/app-config/tasks/main.yml` | Renders .env from Jinja2 (no_log) |
+| `ansible/roles/app-config/templates/env.j2` | .env template (secrets from vault) |
+| `ansible/roles/firewall/tasks/main.yml` | Opens 8082, 5000, 5434 via ufw |
+| `ansible/roles/deploy/tasks/main.yml` | Pull image + docker compose up |
+| `ansible/roles/health-check/tasks/main.yml` | URI poll with retries |
+| `ansible/README.md` | 8 command sequences with expected output |
+| `ansible/archive/` | Old pre-PostgreSQL files preserved |
+
+### YAML Validation
+
 ```
+All 12 YAML files: python yaml.safe_load → All YAML valid
+```
+
+Full `ansible-playbook --syntax-check` must be run in WSL (see README.md).
 
 ---
 

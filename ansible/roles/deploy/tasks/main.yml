@@ -1,0 +1,41 @@
+---
+# roles/deploy/tasks/main.yml
+# Pulls the specified image tag from the local registry and brings up the
+# Docker Compose stack. Records the active release in a file.
+# Variable required: release_tag (e.g. "1.1.42")
+
+- name: Ensure registry container is running
+  ansible.builtin.command: docker start parcel-registry
+  register: registry_start
+  changed_when: "'parcel-registry' in registry_start.stdout"
+  failed_when: false
+
+- name: Pull exact image tag {{ release_tag }}
+  ansible.builtin.command: >
+    docker pull {{ registry_host }}/{{ image_repo }}:{{ release_tag }}
+  register: pull_result
+  changed_when: "'Pull complete' in pull_result.stdout or 'Downloaded newer image' in pull_result.stdout"
+
+- name: Bring up Docker Compose stack ({{ compose_project }})
+  ansible.builtin.command: >
+    docker compose -p {{ compose_project }}
+    --env-file {{ app_config }}/.env
+    -f {{ app_base }}/docker-compose.yml
+    up -d --no-build
+  environment:
+    APP_IMAGE: "{{ registry_host }}/{{ image_repo }}:{{ release_tag }}"
+    APP_PORT: "{{ app_port }}"
+    DB_PORT: "{{ db_port }}"
+    DB_CONTAINER: "{{ compose_project }}-db"
+    APP_CONTAINER: "{{ compose_project }}-app"
+  register: compose_up
+  changed_when: "'Started' in compose_up.stderr or 'Recreated' in compose_up.stderr"
+
+- name: Record active release tag
+  ansible.builtin.copy:
+    content: "{{ release_tag }}"
+    dest: "{{ app_base }}/active_release"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0640"
+  become: true

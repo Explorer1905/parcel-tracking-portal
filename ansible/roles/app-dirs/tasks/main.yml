@@ -1,0 +1,27 @@
+---
+# roles/app-dirs/tasks/main.yml
+# Creates the four required application directories with correct ownership.
+# Idempotent: directory creation is a no-op when the directory already exists.
+
+- name: Create application directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0750"
+  become: true
+  loop:
+    - "{{ app_base }}"
+    - "{{ app_config }}"
+    - "{{ app_data }}"
+    - "{{ app_backup }}"
+
+- name: Copy docker-compose.yml to application base directory
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../docker-compose.yml"
+    dest: "{{ app_base }}/docker-compose.yml"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0640"
+  become: true

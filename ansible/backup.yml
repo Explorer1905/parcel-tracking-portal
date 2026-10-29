@@ -1,0 +1,62 @@
+---
+# backup.yml – Create a timestamped pg_dump of the PostgreSQL database.
+#
+# Usage:
+#   ansible-playbook -i inventory.ini backup.yml
+#
+# Output: {{ app_backup }}/parcels_YYYYMMDD_HHMMSS.sql.gz
+# Retention: backups older than 7 days are deleted automatically.
+
+- name: Backup Parcel Tracking Portal database
+  hosts: parcel_servers
+  become: false
+  gather_facts: true
+
+  vars:
+    backup_timestamp: "{{ ansible_date_time.date | replace('-','') }}_{{ ansible_date_time.time | replace(':','') | truncate(6, true, '') }}"
+    backup_file: "{{ app_backup }}/parcels_{{ backup_timestamp }}.sql.gz"
+    db_container: "{{ compose_project }}-db"
+    retention_days: 7
+
+  tasks:
+    - name: Ensure backup directory exists
+      ansible.builtin.file:
+        path: "{{ app_backup }}"
+        state: directory
+        mode: "0750"
+      become: true
+
+    - name: Create database backup via pg_dump in container
+      ansible.builtin.shell: >
+        docker exec {{ db_container }}
+        pg_dump -U parcel parcels
+        | gzip > {{ backup_file }}
+      register: backup_result
+      changed_when: backup_result.rc == 0
+
+    - name: Verify backup file was created
+      ansible.builtin.stat:
+        path: "{{ backup_file }}"
+      register: backup_stat
+
+    - name: Show backup result
+      ansible.builtin.debug:
+        msg: >
+          Backup created: {{ backup_file }}
+          Size: {{ backup_stat.stat.size | default(0) }} bytes
+
+    - name: Remove backups older than {{ retention_days }} days
+      ansible.builtin.find:
+        paths: "{{ app_backup }}"
+        patterns: "parcels_*.sql.gz"
+        age: "{{ retention_days }}d"
+        age_stamp: mtime
+      register: old_backups
+
+    - name: Delete old backup files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_backups.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
