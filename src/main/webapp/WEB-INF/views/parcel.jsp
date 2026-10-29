@@ -4,7 +4,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Parcel detail</title>
+  <title>Parcel <%= Html.esc(parcel.id()) %> - Parcel Tracking Portal</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/styles.css">
 </head>
 <body>
@@ -19,6 +19,26 @@
         <a href="dashboard">Dashboard</a>
         <a href="alerts">Alerts</a>
       </div>
+    </div>
+
+    <%-- Parcel details block (Phase A1) --%>
+    <div class="panel">
+      <h2 class="section-title">Parcel details</h2>
+      <dl class="detail-grid">
+        <dt>Sender</dt>       <dd><%= Html.esc(parcel.sender()) %></dd>
+        <dt>Receiver</dt>     <dd><%= Html.esc(parcel.receiver()) %></dd>
+        <dt>Origin</dt>       <dd><%= Html.esc(parcel.origin()) %></dd>
+        <dt>Destination</dt>  <dd><%= Html.esc(parcel.destination()) %></dd>
+        <dt>Priority</dt>
+        <dd><span class="badge badge-<%= Html.esc(parcel.priority().toLowerCase()) %>">
+          <%= Html.esc(parcel.priority()) %></span></dd>
+        <dt>Weight</dt>       <dd><%= parcel.weightKg() %> kg</dd>
+        <dt>Expected delivery</dt>
+        <dd><%= parcel.expectedDelivery() == null ? "Not set" : Html.esc(parcel.expectedDelivery()) %></dd>
+        <dt>Assigned agent</dt>
+        <dd><%= parcel.assignedAgent() == null || parcel.assignedAgent().isBlank() ? "—" : Html.esc(parcel.assignedAgent()) %></dd>
+        <dt>Registered</dt>   <dd><%= Html.esc(parcel.createdAt()) %></dd>
+      </dl>
     </div>
 
     <div class="panel">

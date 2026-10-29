@@ -54,3 +54,86 @@ FROM (VALUES
     ('DEMO-1010', 'In Transit',       'Solapur',   LOCALTIMESTAMP - INTERVAL '6 hours',                 'On the way')
 ) AS v (parcel_id, status, location, event_time, remarks)
 WHERE NOT EXISTS (SELECT 1 FROM events e WHERE e.parcel_id = v.parcel_id);
+
+-- Phase A1: set varied priority/weight/expected_delivery/assigned_agent.
+-- These columns exist only after V2 migration; this block is idempotent.
+-- DEMO-1004, 1005, 1007 are the delayed/failed parcels (no future delivery date).
+UPDATE parcels SET
+    weight_kg         = 2.50,
+    priority          = 'Express',
+    expected_delivery = CURRENT_DATE + 1,
+    assigned_agent    = 'Ravi Kumar'
+WHERE parcel_id = 'DEMO-1001'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 0.80,
+    priority          = 'Standard',
+    expected_delivery = CURRENT_DATE + 2,
+    assigned_agent    = 'Priya Singh'
+WHERE parcel_id = 'DEMO-1002'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 5.00,
+    priority          = 'Urgent',
+    expected_delivery = CURRENT_DATE,
+    assigned_agent    = 'Suresh Nair'
+WHERE parcel_id = 'DEMO-1003'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 3.20,
+    priority          = 'Standard',
+    expected_delivery = NULL,
+    assigned_agent    = 'Anita Sharma'
+WHERE parcel_id = 'DEMO-1004'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 1.50,
+    priority          = 'Express',
+    expected_delivery = NULL,
+    assigned_agent    = 'Deepak Verma'
+WHERE parcel_id = 'DEMO-1005'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 12.00,
+    priority          = 'Standard',
+    expected_delivery = CURRENT_DATE + 3,
+    assigned_agent    = 'Kavitha Rao'
+WHERE parcel_id = 'DEMO-1006'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 0.50,
+    priority          = 'Standard',
+    expected_delivery = NULL,
+    assigned_agent    = 'Mohan Joshi'
+WHERE parcel_id = 'DEMO-1007'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 8.75,
+    priority          = 'Urgent',
+    expected_delivery = CURRENT_DATE + 1,
+    assigned_agent    = 'Lakshmi Iyer'
+WHERE parcel_id = 'DEMO-1008'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 22.00,
+    priority          = 'Standard',
+    expected_delivery = CURRENT_DATE - 2,
+    assigned_agent    = 'Arnab Das'
+WHERE parcel_id = 'DEMO-1009'
+  AND weight_kg = 1.00 AND priority = 'Standard';
+
+UPDATE parcels SET
+    weight_kg         = 4.30,
+    priority          = 'Express',
+    expected_delivery = CURRENT_DATE + 1,
+    assigned_agent    = 'Fatima Sheikh'
+WHERE parcel_id = 'DEMO-1010'
+  AND weight_kg = 1.00 AND priority = 'Standard';

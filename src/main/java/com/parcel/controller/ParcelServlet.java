@@ -26,9 +26,19 @@ public class ParcelServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         String id = req.getParameter("parcelId");
         try {
-            service.addParcel(id, req.getParameter("sender"), req.getParameter("receiver"),
-                    req.getParameter("origin"), req.getParameter("destination"));
-            resp.sendRedirect("parcels?added=" + URLEncoder.encode(id.trim(), StandardCharsets.UTF_8));
+            service.addParcel(
+                    id,
+                    req.getParameter("sender"),
+                    req.getParameter("receiver"),
+                    req.getParameter("origin"),
+                    req.getParameter("destination"),
+                    req.getParameter("weight"),           // optional
+                    req.getParameter("priority"),         // optional
+                    req.getParameter("expectedDelivery"), // optional
+                    req.getParameter("agent")             // optional
+            );
+            resp.sendRedirect("parcels?added=" + URLEncoder.encode(
+                    id == null ? "" : id.trim(), StandardCharsets.UTF_8));
         } catch (IllegalArgumentException e) {
             req.setAttribute("error", e.getMessage());
             show(req, resp);
