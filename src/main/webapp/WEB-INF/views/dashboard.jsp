@@ -20,8 +20,10 @@
       <p class="subtitle">Track operational status and drill into parcel movement events.</p>
       <div class="top-nav">
         <a href="index.jsp">Home</a>
+        <a href="track">Track</a>
         <a href="parcels">Add parcel</a>
         <a href="alerts">Alerts</a>
+        <a href="export/parcels.csv">Export CSV</a>
       </div>
     </div>
 

@@ -149,6 +149,14 @@ public class ParcelService {
         return results.stream().filter(parcel -> status.equals(parcel.status())).toList();
     }
 
+    public List<Parcel> findPage(String query, int offset, int limit) {
+        return dao.findPage(query, offset, limit);
+    }
+
+    public int countFind(String query) {
+        return dao.countFind(query);
+    }
+
     public Parcel find(String id) {
         return id == null || id.isBlank() ? null : dao.findById(id.trim());
     }

@@ -143,6 +143,54 @@ public class ParcelDao {
         }
     }
 
+    /** Total parcel count (no filter). */
+    public int countAll() {
+        try (Connection c = Database.getConnection();
+             Statement s = c.createStatement();
+             ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM parcels")) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Count matching a query string (same LIKE pattern as find()). */
+    public int countFind(String query) {
+        String sql = "SELECT COUNT(*) FROM parcels p WHERE LOWER(p.parcel_id) LIKE ? "
+                + "OR LOWER(p.sender) LIKE ? OR LOWER(p.receiver) LIKE ? "
+                + "OR LOWER(p.origin) LIKE ? OR LOWER(p.destination) LIKE ?";
+        String pattern = "%" + (query == null ? "" : query.trim().toLowerCase()) + "%";
+        try (Connection c = Database.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 1; i <= 5; i++) ps.setString(i, pattern);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? rs.getInt(1) : 0; }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Paginated search: offset/limit applied after the same LIKE filter as find(). */
+    public List<Parcel> findPage(String query, int offset, int limit) {
+        String sql = "SELECT " + PARCEL_SELECT + ", "
+                + "(SELECT e.status FROM events e WHERE e.parcel_id = p.parcel_id "
+                + "ORDER BY e.event_time DESC, e.event_id DESC LIMIT 1) AS status "
+                + "FROM parcels p WHERE LOWER(p.parcel_id) LIKE ? OR LOWER(p.sender) LIKE ? "
+                + "OR LOWER(p.receiver) LIKE ? OR LOWER(p.origin) LIKE ? OR LOWER(p.destination) LIKE ? "
+                + "ORDER BY p.created_at DESC, p.parcel_id LIMIT ? OFFSET ?";
+        String pattern = "%" + (query == null ? "" : query.trim().toLowerCase()) + "%";
+        List<Parcel> list = new ArrayList<>();
+        try (Connection c = Database.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 1; i <= 5; i++) ps.setString(i, pattern);
+            ps.setInt(6, limit);
+            ps.setInt(7, offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(parcel(rs));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+        return list;
+    }
+
     public List<ParcelEvent> eventsFor(String parcelId) {
         List<ParcelEvent> events = new ArrayList<>();
         String sql = "SELECT event_id, parcel_id, status, location, event_time, remarks "

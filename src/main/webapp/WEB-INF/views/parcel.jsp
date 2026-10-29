@@ -16,6 +16,7 @@
       </p>
       <div class="top-nav">
         <a href="index.jsp">Home</a>
+        <a href="track">Track</a>
         <a href="dashboard">Dashboard</a>
         <a href="alerts">Alerts</a>
       </div>

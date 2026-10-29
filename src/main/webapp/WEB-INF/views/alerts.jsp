@@ -14,6 +14,7 @@
       <p class="subtitle">Review delayed or failed deliveries that require attention.</p>
       <div class="top-nav">
         <a href="index.jsp">Home</a>
+        <a href="track">Track</a>
         <a href="dashboard">Dashboard</a>
         <a href="parcels">Parcels</a>
       </div>

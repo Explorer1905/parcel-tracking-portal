@@ -130,6 +130,22 @@ class ParcelPortalSeleniumTest {
             open("/alerts");
         assertTrue(driver.findElement(By.id("alertTable")).getText().contains(parcelId));
     }
+    @Test
+    void publicTrackPageFindsParcel() {
+        // Register via the internal form, then find it on the public /track page.
+        String parcelId = registerParcel();
+        open("/track?id=" + parcelId);
+
+        // The result ID should appear in the page
+        boolean found = new WebDriverWait(driver, Duration.ofSeconds(5))
+                .until(currentDriver -> currentDriver.getPageSource().contains(parcelId));
+        assertTrue(found, "Track page should show the registered parcel ID");
+
+        // The trackId input should be pre-filled
+        String inputValue = driver.findElement(By.id("trackId")).getAttribute("value");
+        assertTrue(inputValue.contains(parcelId), "trackId input should be pre-filled");
+    }
+
     private static void open(String path) {
         driver.get(BASE_URL + path);
     }
