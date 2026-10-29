@@ -5,6 +5,7 @@ import com.parcel.model.Parcel;
 import com.parcel.model.ParcelEvent;
 import com.parcel.util.Database;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,9 +19,9 @@ import java.util.List;
  * The schema is created by Flyway migrations (src/main/resources/db/migration).
  */
 public class ParcelDao {
-    private static final String UNIQUE_VIOLATION = "23505";
+    private static final String UNIQUE_VIOLATION    = "23505";
     private static final String FOREIGN_KEY_VIOLATION = "23503";
-    private static final String CHECK_VIOLATION = "23514";
+    private static final String CHECK_VIOLATION     = "23514";
 
     /** Joins each parcel to its most recent event (latest time, then latest insert). */
     private static final String LATEST_EVENT_JOIN =
@@ -32,6 +33,11 @@ public class ParcelDao {
     private static final String DELAYED_RULE =
             "(latest.status = 'Failed' OR (latest.status <> 'Delivered' "
                     + "AND latest.event_time < LOCALTIMESTAMP - INTERVAL '48 hours'))";
+
+    /** SELECT list shared by find/findById/alerts – includes V2 columns. */
+    private static final String PARCEL_SELECT =
+            "p.parcel_id, p.sender, p.receiver, p.origin, p.destination, p.created_at, "
+            + "p.weight_kg, p.priority, p.expected_delivery, p.assigned_agent";
 
     public boolean exists(String id) {
         try (Connection c = Database.getConnection();
@@ -49,7 +55,10 @@ public class ParcelDao {
         try (Connection c = Database.getConnection()) {
             c.setAutoCommit(false);
             try (PreparedStatement ps = c.prepareStatement(
-                         "INSERT INTO parcels (parcel_id, sender, receiver, origin, destination) VALUES (?,?,?,?,?)");
+                         "INSERT INTO parcels "
+                         + "(parcel_id, sender, receiver, origin, destination, "
+                         + " weight_kg, priority, expected_delivery, assigned_agent) "
+                         + "VALUES (?,?,?,?,?,?,?,?,?)");
                  PreparedStatement pe = c.prepareStatement(
                          "INSERT INTO events (parcel_id, status, location, remarks) VALUES (?,?,?,?)")) {
                 ps.setString(1, p.id());
@@ -57,7 +66,17 @@ public class ParcelDao {
                 ps.setString(3, p.receiver());
                 ps.setString(4, p.origin());
                 ps.setString(5, p.destination());
+                ps.setDouble(6, p.weightKg());
+                ps.setString(7, p.priority());
+                if (p.expectedDelivery() != null && !p.expectedDelivery().isBlank()) {
+                    ps.setDate(8, Date.valueOf(p.expectedDelivery()));
+                } else {
+                    ps.setNull(8, java.sql.Types.DATE);
+                }
+                ps.setString(9, p.assignedAgent() == null || p.assignedAgent().isBlank()
+                        ? null : p.assignedAgent());
                 ps.executeUpdate();
+
                 pe.setString(1, p.id());
                 pe.setString(2, "Registered");
                 pe.setString(3, p.origin());
@@ -70,8 +89,11 @@ public class ParcelDao {
             }
         } catch (SQLException e) {
             if (UNIQUE_VIOLATION.equals(e.getSQLState())) {
-                // Two simultaneous requests can both pass exists(); the primary key decides.
                 throw new IllegalArgumentException("Parcel ID " + p.id() + " already exists.");
+            }
+            if (CHECK_VIOLATION.equals(e.getSQLState())) {
+                throw new IllegalArgumentException(
+                        "Constraint violation – check weight (0.01–1000 kg) and priority (Standard/Express/Urgent).");
             }
             throw new IllegalStateException(e);
         }
@@ -82,7 +104,7 @@ public class ParcelDao {
     }
 
     public List<Parcel> find(String query) {
-        String sql = "SELECT p.parcel_id, p.sender, p.receiver, p.origin, p.destination, p.created_at, "
+        String sql = "SELECT " + PARCEL_SELECT + ", "
                 + "(SELECT e.status FROM events e WHERE e.parcel_id = p.parcel_id "
                 + "ORDER BY e.event_time DESC, e.event_id DESC LIMIT 1) AS status "
                 + "FROM parcels p WHERE LOWER(p.parcel_id) LIKE ? OR LOWER(p.sender) LIKE ? "
@@ -107,7 +129,7 @@ public class ParcelDao {
     }
 
     public Parcel findById(String id) {
-        String sql = "SELECT p.parcel_id, p.sender, p.receiver, p.origin, p.destination, p.created_at, "
+        String sql = "SELECT " + PARCEL_SELECT + ", "
                 + "(SELECT e.status FROM events e WHERE e.parcel_id = p.parcel_id "
                 + "ORDER BY e.event_time DESC, e.event_id DESC LIMIT 1) AS status "
                 + "FROM parcels p WHERE LOWER(p.parcel_id) = LOWER(?)";
@@ -178,8 +200,8 @@ public class ParcelDao {
     }
 
     public List<Parcel> alerts() {
-        String sql = "SELECT p.parcel_id, p.sender, p.receiver, p.origin, p.destination, p.created_at, "
-                + "latest.status AS status FROM parcels p " + LATEST_EVENT_JOIN
+        String sql = "SELECT " + PARCEL_SELECT + ", latest.status AS status "
+                + "FROM parcels p " + LATEST_EVENT_JOIN
                 + "WHERE " + DELAYED_RULE + " ORDER BY p.created_at DESC, p.parcel_id";
         List<Parcel> result = new ArrayList<>();
         try (Connection c = Database.getConnection(); Statement s = c.createStatement();
@@ -194,9 +216,18 @@ public class ParcelDao {
     }
 
     private static Parcel parcel(ResultSet rs) throws SQLException {
-        return new Parcel(rs.getString("parcel_id"), rs.getString("sender"),
-                rs.getString("receiver"), rs.getString("origin"),
-                rs.getString("destination"), rs.getString("status"),
-                rs.getString("created_at"));
+        Date expDelivery = rs.getDate("expected_delivery");
+        return new Parcel(
+                rs.getString("parcel_id"),
+                rs.getString("sender"),
+                rs.getString("receiver"),
+                rs.getString("origin"),
+                rs.getString("destination"),
+                rs.getString("status"),
+                rs.getString("created_at"),
+                rs.getDouble("weight_kg"),
+                rs.getString("priority"),
+                expDelivery == null ? null : expDelivery.toString(),
+                rs.getString("assigned_agent"));
     }
 }

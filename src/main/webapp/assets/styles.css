@@ -206,3 +206,54 @@ tr:last-child td {
   display: grid;
   gap: 12px;
 }
+
+/* Phase A1 additions */
+
+.hint {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: normal;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-standard {
+  background: #e8f0fe;
+  color: #1a56db;
+}
+
+.badge-express {
+  background: #fff3cd;
+  color: #92400e;
+}
+
+.badge-urgent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.detail-grid dt {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.detail-grid dd {
+  margin: 0;
+  font-size: 14px;
+}

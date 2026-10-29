@@ -48,6 +48,31 @@
           <label for="destination">Destination</label>
           <input id="destination" name="destination" value="<%= Html.esc(request.getParameter("destination")) %>">
         </div>
+        <%-- Optional V2 fields --%>
+        <div class="field">
+          <label for="weight">Weight (kg) <span class="hint">optional, default 1.0</span></label>
+          <input id="weight" name="weight" type="number" step="0.01" min="0.01" max="1000"
+                 placeholder="1.0" value="<%= Html.esc(request.getParameter("weight")) %>">
+        </div>
+        <div class="field">
+          <label for="priority">Priority <span class="hint">optional</span></label>
+          <select id="priority" name="priority">
+            <option value="">Standard (default)</option>
+            <option value="Standard"<% if ("Standard".equals(request.getParameter("priority"))) { %> selected<% } %>>Standard</option>
+            <option value="Express"<% if ("Express".equals(request.getParameter("priority"))) { %> selected<% } %>>Express</option>
+            <option value="Urgent"<% if ("Urgent".equals(request.getParameter("priority"))) { %> selected<% } %>>Urgent</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="expectedDelivery">Expected Delivery <span class="hint">optional</span></label>
+          <input id="expectedDelivery" name="expectedDelivery" type="date"
+                 value="<%= Html.esc(request.getParameter("expectedDelivery")) %>">
+        </div>
+        <div class="field">
+          <label for="agent">Assigned Agent <span class="hint">optional</span></label>
+          <input id="agent" name="agent" placeholder="Agent name"
+                 value="<%= Html.esc(request.getParameter("agent")) %>">
+        </div>
         <div class="actions">
           <button id="addBtn" type="submit">Add parcel</button>
         </div>
@@ -57,7 +82,8 @@
     <div class="panel">
       <h2 class="section-title">All parcels (<%= parcels.size() %>)</h2>
       <table id="parcelTable">
-        <tr><th>Parcel ID</th><th>Sender</th><th>Receiver</th><th>Origin</th><th>Destination</th><th>Status</th><th>Created</th></tr>
+        <tr><th>Parcel ID</th><th>Sender</th><th>Receiver</th><th>Origin</th><th>Destination</th>
+            <th>Priority</th><th>Weight&nbsp;(kg)</th><th>Expected</th><th>Status</th><th>Created</th></tr>
         <% for (Parcel p : parcels) { %>
         <tr>
           <td><%= Html.esc(p.id()) %></td>
@@ -65,6 +91,9 @@
           <td><%= Html.esc(p.receiver()) %></td>
           <td><%= Html.esc(p.origin()) %></td>
           <td><%= Html.esc(p.destination()) %></td>
+          <td><span class="badge badge-<%= Html.esc(p.priority().toLowerCase()) %>"><%= Html.esc(p.priority()) %></span></td>
+          <td><%= p.weightKg() %></td>
+          <td><%= p.expectedDelivery() == null ? "—" : Html.esc(p.expectedDelivery()) %></td>
           <td><%= Html.esc(p.status()) %></td>
           <td><%= Html.esc(p.createdAt()) %></td>
         </tr>
